@@ -113,6 +113,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .drop-icon{font-size:28px;margin-bottom:6px}
 .drop-text{font-size:12px;color:var(--text2)}
 .drop-hint{font-size:11px;color:var(--text3);margin-top:3px}
+.upload-type-card{border:1.5px solid var(--border);border-radius:var(--rl);padding:14px 10px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.upload-type-card:hover{border-color:var(--blue2);background:#EFF6FF}
+.upload-type-card.active{border-color:var(--blue);background:#EFF6FF;box-shadow:0 0 0 3px rgba(26,86,219,.1)}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 .btn-cancel{padding:7px 14px;border:1px solid var(--border);border-radius:7px;background:transparent;cursor:pointer;font-size:12px;color:var(--text2)}
 .btn-cancel:hover{background:var(--surf2)}
@@ -161,18 +164,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- UPLOAD MODAL -->
 <div class="modal-bg" id="uploadModal">
   <div class="modal">
-    <div class="modal-title">Upload VNDLY / Cost Report</div>
-    <div class="modal-sub">Upload timesheet (.xlsx/.csv), contractor cost card, or project mapping file.</div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button class="btn-primary" style="font-size:11px" onclick="setUploadType('timesheet')">Timesheet (VNDLY)</button>
-      <button class="nb nb-ghost" style="color:var(--text1);background:var(--surf2);border-color:var(--border);font-size:11px" onclick="setUploadType('costcard')">Cost Card</button>
-      <button class="nb nb-ghost" style="color:var(--text1);background:var(--surf2);border-color:var(--border);font-size:11px" onclick="setUploadType('projectmap')">Project Mapping</button>
+    <div class="modal-title">Upload file</div>
+    <div class="modal-sub">Choose what you're uploading, then drop or browse for your Excel/CSV file.</div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px">
+      <div class="upload-type-card active" id="ucard-timesheet" onclick="setUploadType('timesheet')">
+        <div style="font-size:22px;margin-bottom:6px">📋</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text1)">VNDLY Timesheet</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Hours &amp; status</div>
+      </div>
+      <div class="upload-type-card" id="ucard-costcard" onclick="setUploadType('costcard')">
+        <div style="font-size:22px;margin-bottom:6px">💰</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text1)">Cost Card</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Bill &amp; cost rates</div>
+      </div>
+      <div class="upload-type-card" id="ucard-projectmap" onclick="setUploadType('projectmap')">
+        <div style="font-size:22px;margin-bottom:6px">🗂️</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text1)">Project Mapping</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Contractor → project</div>
+      </div>
     </div>
-    <div id="uploadHint" style="font-size:11px;color:var(--text3);margin-bottom:10px">Columns: Contractor Name, Timesheet Start Date, Timesheet End Date, Total Billable Hours, Status</div>
+
+    <div id="uploadHint" style="font-size:11px;color:var(--text3);margin-bottom:10px;padding:8px 10px;background:var(--surf2);border-radius:6px;border-left:3px solid var(--blue2)">Required columns: Contractor Name · Timesheet Start Date · Timesheet End Date · Total Billable Hours · Status</div>
+
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
       <div class="drop-icon">📂</div>
-      <div class="drop-text">Click or drag &amp; drop file</div>
-      <div class="drop-hint">.xlsx or .csv</div>
+      <div class="drop-text">Click or drag &amp; drop your file here</div>
+      <div class="drop-hint">.xlsx or .csv accepted</div>
     </div>
     <input type="file" id="fileInput" accept=".xlsx,.csv" style="display:none" onchange="handleFile(event)">
     <div class="modal-btns"><button class="btn-cancel" onclick="closeModal('uploadModal')">Cancel</button></div>
@@ -361,9 +379,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <script>
 // ── INITIAL RATE CARD ──────────────────────────────────────────────
 let RATES = {
-  "Lalitha Guggilam":   {bill:39.20, cost:28.00, project:"Data Engineering"},
-  "Naveena Palakala":   {bill:107.80,cost:75.00, project:"Analytics Platform"},
-  "Priyatham Kommineni":{bill:51.94, cost:37.00, project:"Cloud Infrastructure"}
+  "Lalitha Guggilam":   {bill:39.20,  cost:27.10, project:"BOBJ"},
+  "Naveena Palakala":   {bill:107.80, cost:83.72, project:"SAP OTC Consulting"},
+  "Priyatham Kommineni":{bill:51.94,  cost:46.23, project:"Data Engineering"}
 };
 
 // ── RAW DATA ──────────────────────────────────────────────────────
@@ -806,38 +824,60 @@ function processFile(file){
       };
 
       if(uploadType==='costcard'){
-        let parsed;
-        if(file.name.endsWith('.csv')){parsed=parseCSV(ev.target.result);}
-        else{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];parsed={data:XLSX.utils.sheet_to_json(ws,{raw:false})};}
-        parsed.data.forEach(row=>{
-          const n=row['Contractor Name']||row['name']||row['contractor'];
+        let rows2=[];
+        if(file.name.endsWith('.csv')){
+          const{data}=parseCSV(ev.target.result);rows2=data;
+        }else{
+          const wb=XLSX.read(ev.target.result,{type:'array',cellDates:false});
+          const ws=wb.Sheets[wb.SheetNames[0]];
+          rows2=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+        }
+        if(!rows2.length){showToast('No rows found in cost card file');return;}
+        let updated=0,added=0;
+        rows2.forEach(row=>{
+          // flexible column name matching (case-insensitive, strip spaces)
+          const norm=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k.toLowerCase().replace(/[\s_()/]/g,''),v]));
+          const r=norm(row);
+          const n=(r['contractorname']||r['name']||r['contractor']||'').trim();
           if(!n)return;
-          const b=parseFloat(row['Bill Rate ($/hr)']||row['Bill Rate']||row['bill']||0);
-          const c=parseFloat(row['Cost Rate ($/hr)']||row['Cost Rate']||row['cost']||0);
-          const p=row['Project']||row['project']||row['Project Name']||'Unassigned';
+          const b=parseFloat(r['billrate$hr']||r['billrate']||r['billingrate']||r['bill']||r['billrate$/hr']||0);
+          const c=parseFloat(r['costrate$hr']||r['costrate']||r['cost']||r['costrate$/hr']||0);
+          const p=(r['project']||r['projectname']||'Unassigned').trim();
+          const isNew=!RATES[n];
           RATES[n]={bill:b,cost:c,project:p};
+          isNew?added++:updated++;
         });
         const raw=DATA.map(r=>({name:r.name,start:r.start,end:r.end,hours:r.hours,status:r.status,month:r.month}));
         rebuildData(raw);
         closeModal('uploadModal');renderAll();
-        showToast(`✓ Cost card loaded for ${parsed.data.length} contractors`);
+        showToast(`✓ Cost card: ${updated} updated, ${added} new contractors added`);
         return;
       }
 
       if(uploadType==='projectmap'){
-        let parsed;
-        if(file.name.endsWith('.csv')){parsed=parseCSV(ev.target.result);}
-        else{const wb=XLSX.read(ev.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];parsed={data:XLSX.utils.sheet_to_json(ws,{raw:false})};}
-        parsed.data.forEach(row=>{
-          const n=row['Contractor Name']||row['name'];
-          const p=row['Project Name']||row['Project']||row['project'];
-          if(n&&p&&RATES[n])RATES[n].project=p;
-          else if(n&&p)RATES[n]={...(RATES[n]||{bill:0,cost:0}),project:p};
+        let rows2=[];
+        if(file.name.endsWith('.csv')){
+          const{data}=parseCSV(ev.target.result);rows2=data;
+        }else{
+          const wb=XLSX.read(ev.target.result,{type:'array',cellDates:false});
+          const ws=wb.Sheets[wb.SheetNames[0]];
+          rows2=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+        }
+        if(!rows2.length){showToast('No rows found in project mapping file');return;}
+        let updated=0,added=0;
+        rows2.forEach(row=>{
+          const norm=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k.toLowerCase().replace(/[\s_()/]/g,''),v]));
+          const r=norm(row);
+          const n=(r['contractorname']||r['name']||r['contractor']||'').trim();
+          const p=(r['projectname']||r['project']||'').trim();
+          if(!n||!p)return;
+          if(RATES[n]){RATES[n].project=p;updated++;}
+          else{RATES[n]={bill:0,cost:0,project:p};added++;}
         });
         const raw=DATA.map(r=>({name:r.name,start:r.start,end:r.end,hours:r.hours,status:r.status,month:r.month}));
         rebuildData(raw);
         closeModal('uploadModal');renderAll();
-        showToast('✓ Project mapping applied');
+        showToast(`✓ Project map: ${updated} updated, ${added} new contractors added`);
         return;
       }
 
