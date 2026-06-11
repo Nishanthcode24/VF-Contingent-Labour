@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kochasoft — VNDLY Billing Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --navy:   #0F2444;
+    --blue:   #1A56DB;
+    --blue2:  #3B82F6;
+    --teal:   #0891B2;
+    --steel:  #1E3A5F;
+    --accent: #38BDF8;
+    --green:  #059669;
+    --amber:  #D97706;
+    --red:    #DC2626;
+    --bg:     #F0F4F8;
+    --surface:#FFFFFF;
+    --surf2:  #F8FAFC;
+    --border: #E2E8F0;
+    --text1:  #0F172A;
+    --text2:  #475569;
+    --text3:  #94A3B8;
+    --r:      8px;
+    --rl:     12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+         background: var(--bg); color: var(--text1); font-size: 13px; min-height: 100vh; }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    background: var(--navy);
+    padding: 0 24px;
+    height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .brand-name { font-size: 14px; font-weight: 600; color: #fff; letter-spacing: .3px; }
+  .brand-sub { font-size: 11px; color: rgba(255,255,255,.45); margin-left: 6px; }
+  .nav-actions { display: flex; gap: 8px; align-items: center; }
+  .nav-btn {
+    font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px; font-weight: 500;
+    transition: opacity .15s;
+  }
+  .nav-btn:hover { opacity: .85; }
+  .nb-ghost { background: transparent; border: 1px solid rgba(255,255,255,.25); color: rgba(255,255,255,.8); }
+  .nb-solid { background: var(--accent); border: 1px solid var(--accent); color: var(--navy); }
+  .nb-upload { background: rgba(255,255,255,.08); border: 1px dashed rgba(255,255,255,.3); color: rgba(255,255,255,.7); }
+
+  /* ── LAYOUT ── */
+  .page { max-width: 1200px; margin: 0 auto; padding: 20px 20px 40px; }
+
+  /* ── FILTER BAR ── */
+  .filterbar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl);
+    padding: 12px 16px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 18px;
+  }
+  .fl { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+  .filterbar select {
+    font-size: 12px; padding: 5px 10px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surf2); color: var(--text1);
+    cursor: pointer; min-width: 140px;
+  }
+  .filterbar select:focus { outline: 2px solid var(--blue2); outline-offset: 1px; }
+  .filter-reset {
+    margin-left: auto; font-size: 12px; padding: 5px 12px; border-radius: 6px;
+    border: 1px solid var(--border); background: transparent; cursor: pointer; color: var(--text2);
+  }
+  .filter-reset:hover { background: var(--surf2); }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl);
+    padding: 16px 18px; position: relative; overflow: hidden;
+  }
+  .kpi::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+    border-radius: 12px 0 0 12px;
+  }
+  .kpi.k1::before { background: var(--blue); }
+  .kpi.k2::before { background: var(--green); }
+  .kpi.k3::before { background: var(--teal); }
+  .kpi.k4::before { background: var(--amber); }
+  .kpi-label { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: var(--text1); line-height: 1; margin-bottom: 4px; }
+  .kpi-sub { font-size: 11px; color: var(--text3); }
+
+  /* ── CHARTS ── */
+  .chart-grid { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; gap: 14px; margin-bottom: 18px; }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl);
+    padding: 16px;
+  }
+  .cc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cc-title { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .cc-badge { font-size: 10px; padding: 2px 7px; border-radius: 20px; background: #EFF6FF; color: var(--blue); font-weight: 600; }
+
+  /* ── SUMMARY TABLE (contractor / month breakdown) ── */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+  .sum-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl);
+    overflow: hidden;
+  }
+  .sum-head {
+    padding: 12px 16px; background: var(--navy); color: #fff;
+    font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;
+  }
+  .sum-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .sum-table th { padding: 8px 14px; text-align: left; font-size: 11px; font-weight: 600;
+                  color: var(--text3); text-transform: uppercase; letter-spacing: .4px;
+                  border-bottom: 1px solid var(--border); background: var(--surf2); }
+  .sum-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  .sum-table tr:last-child td { border-bottom: none; }
+  .sum-table tr:hover td { background: var(--surf2); }
+  .sum-table .tot { font-weight: 700; background: #EFF6FF; }
+  .sum-table .tot td { border-top: 1px solid var(--border); }
+  .bar-bg { background: var(--border); height: 5px; border-radius: 3px; margin-top: 3px; }
+  .bar-fill { height: 5px; border-radius: 3px; background: var(--blue2); }
+
+  /* ── DETAIL TABLE ── */
+  .detail-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--rl);
+    overflow: hidden;
+  }
+  .dt-head {
+    padding: 12px 16px; background: var(--steel); color: #fff;
+    font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;
+  }
+  .dt-count { font-size: 11px; opacity: .6; font-weight: 400; }
+  .dt-wrap { overflow-x: auto; }
+  .dt-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .dt-table th {
+    padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600;
+    color: var(--text3); text-transform: uppercase; letter-spacing: .4px;
+    background: var(--surf2); border-bottom: 1px solid var(--border);
+    white-space: nowrap; cursor: pointer; user-select: none;
+  }
+  .dt-table th:hover { color: var(--blue); }
+  .dt-table th.sort-asc::after  { content: ' ↑'; color: var(--blue); }
+  .dt-table th.sort-desc::after { content: ' ↓'; color: var(--blue); }
+  .dt-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  .dt-table tr:last-child td { border-bottom: none; }
+  .dt-table tr:hover td { background: #F8FAFF; }
+  .dt-table .even td { background: var(--surf2); }
+  .dt-table .even:hover td { background: #EFF6FF; }
+  .dt-table tfoot td { font-weight: 700; background: var(--navy); color: #fff; padding: 10px 12px; }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .badge-a { background: #D1FAE5; color: #065F46; }
+  .badge-s { background: #DBEAFE; color: #1E40AF; }
+  .num { text-align: right; }
+  .name-cell { font-weight: 500; }
+  .avatar {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px; border-radius: 50%; font-size: 9px; font-weight: 700;
+    color: #fff; margin-right: 6px; flex-shrink: 0; vertical-align: middle;
+  }
+
+  /* ── UPLOAD OVERLAY ── */
+  .upload-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+  .upload-overlay.open { display: flex; }
+  .upload-modal {
+    background: var(--surface); border-radius: 16px; padding: 28px 32px; max-width: 440px; width: 90%;
+  }
+  .um-title { font-size: 16px; font-weight: 700; color: var(--text1); margin-bottom: 6px; }
+  .um-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+  .drop-zone {
+    border: 2px dashed var(--border); border-radius: 10px; padding: 28px;
+    text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
+    margin-bottom: 16px;
+  }
+  .drop-zone:hover, .drop-zone.drag { border-color: var(--blue2); background: #EFF6FF; }
+  .drop-icon { font-size: 32px; margin-bottom: 8px; }
+  .drop-text { font-size: 13px; color: var(--text2); }
+  .drop-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+  .um-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .um-cancel { padding: 8px 16px; border: 1px solid var(--border); border-radius: 7px; background: transparent; cursor: pointer; font-size: 13px; color: var(--text2); }
+  .um-cancel:hover { background: var(--surf2); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    background: var(--navy); color: #fff; padding: 10px 18px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; opacity: 0; pointer-events: none;
+    transition: opacity .25s; box-shadow: 0 4px 16px rgba(0,0,0,.2);
+  }
+  .toast.show { opacity: 1; }
+
+  /* ── PRINT ── */
+  @media print {
+    .topnav, .filterbar, .nav-actions, .upload-overlay, .toast { display: none !important; }
+    .page { padding: 0; }
+    .chart-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .chart-grid { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <span class="brand-name">Kochasoft</span>
+    <span class="brand-sub">VNDLY Billing Dashboard</span>
+  </div>
+  <div class="nav-actions">
+    <button class="nav-btn nb-upload" onclick="openUpload()">⬆ Upload VNDLY Report</button>
+    <button class="nav-btn nb-ghost" onclick="exportCSV()">↓ Export CSV</button>
+    <button class="nav-btn nb-solid" onclick="printReport()">⎙ Print / PDF</button>
+  </div>
+</nav>
+
+<!-- UPLOAD MODAL -->
+<div class="upload-overlay" id="uploadOverlay">
+  <div class="upload-modal">
+    <div class="um-title">Upload new VNDLY report</div>
+    <div class="um-sub">Upload your latest VNDLY timesheet export (.xlsx or .csv). Rates are matched automatically from the built-in rate card.</div>
+    <div class="drop-zone" id="dropZone"
+         onclick="document.getElementById('fileInput').click()"
+         ondragover="e=>e.preventDefault()"
+         ondrop="handleDrop(event)">
+      <div class="drop-icon">📂</div>
+      <div class="drop-text">Click to browse or drag &amp; drop</div>
+      <div class="drop-hint">Supports .xlsx and .csv from VNDLY portal</div>
+    </div>
+    <input type="file" id="fileInput" accept=".xlsx,.csv" style="display:none" onchange="handleFile(event)">
+    <div class="um-btns">
+      <button class="um-cancel" onclick="closeUpload()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- MAIN -->
+<div class="page">
+
+  <!-- FILTERS -->
+  <div class="filterbar">
+    <span class="fl">Filter</span>
+    <select id="fName" onchange="render()"><option value="">All contractors</option></select>
+    <select id="fMonth" onchange="render()"><option value="">All months</option></select>
+    <select id="fStatus" onchange="render()">
+      <option value="">All statuses</option>
+      <option>Approved</option>
+      <option>Submitted</option>
+    </select>
+    <button class="filter-reset" onclick="resetFilters()">✕ Clear filters</button>
+    <span id="filterInfo" style="margin-left:6px;font-size:11px;color:var(--text3)"></span>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpis"></div>
+
+  <!-- CHARTS -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="cc-head"><span class="cc-title">Billed by contractor</span><span class="cc-badge" id="bc-badge"></span></div>
+      <div style="position:relative;height:200px"><canvas id="chartContractor" role="img" aria-label="Billed by contractor bar chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="cc-head"><span class="cc-title">Billed by month</span></div>
+      <div style="position:relative;height:200px"><canvas id="chartMonth" role="img" aria-label="Billed by month bar chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="cc-head"><span class="cc-title">Hours by contractor</span></div>
+      <div style="position:relative;height:200px"><canvas id="chartHours" role="img" aria-label="Hours by contractor doughnut chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- SUMMARY BREAKDOWNS -->
+  <div class="summary-grid">
+    <div class="sum-card">
+      <div class="sum-head">By contractor <span style="opacity:.5;font-weight:400;font-size:11px">auto-totals</span></div>
+      <table class="sum-table"><thead><tr><th>Contractor</th><th class="num">Hours</th><th class="num">Billed</th><th>Share</th></tr></thead>
+      <tbody id="sumContractor"></tbody>
+      <tfoot id="sumContractorFoot"></tfoot></table>
+    </div>
+    <div class="sum-card">
+      <div class="sum-head">By month <span style="opacity:.5;font-weight:400;font-size:11px">auto-totals</span></div>
+      <table class="sum-table"><thead><tr><th>Month</th><th class="num">Hours</th><th class="num">Billed</th><th>Share</th></tr></thead>
+      <tbody id="sumMonth"></tbody>
+      <tfoot id="sumMonthFoot"></tfoot></table>
+    </div>
+  </div>
+
+  <!-- DETAIL TABLE -->
+  <div class="detail-card">
+    <div class="dt-head">
+      Weekly detail <span class="dt-count" id="dtCount"></span>
+    </div>
+    <div class="dt-wrap">
+    <table class="dt-table" id="dtTable">
+      <thead><tr>
+        <th onclick="sortTable('name')">Contractor</th>
+        <th onclick="sortTable('start')">Start date</th>
+        <th onclick="sortTable('end')">End date</th>
+        <th onclick="sortTable('month')">Month</th>
+        <th class="num" onclick="sortTable('hours')">Hours</th>
+        <th class="num" onclick="sortTable('rate')">Rate ($/hr)</th>
+        <th class="num" onclick="sortTable('billed')">Billed ($)</th>
+        <th onclick="sortTable('status')">Status</th>
+      </tr></thead>
+      <tbody id="dtBody"></tbody>
+      <tfoot id="dtFoot"></tfoot>
+    </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────
+const INITIAL = {"records": [{"name": "Lalitha Guggilam", "start": "2026-02-22", "end": "2026-02-28", "hours": 3, "status": "Submitted", "month": "Feb 2026", "rate": 39.2, "billed": 117.6}, {"name": "Lalitha Guggilam", "start": "2026-03-01", "end": "2026-03-07", "hours": 35, "status": "Submitted", "month": "Mar 2026", "rate": 39.2, "billed": 1372.0}, {"name": "Lalitha Guggilam", "start": "2026-03-08", "end": "2026-03-14", "hours": 38, "status": "Submitted", "month": "Mar 2026", "rate": 39.2, "billed": 1489.6}, {"name": "Lalitha Guggilam", "start": "2026-03-15", "end": "2026-03-21", "hours": 32, "status": "Submitted", "month": "Mar 2026", "rate": 39.2, "billed": 1254.4}, {"name": "Lalitha Guggilam", "start": "2026-03-22", "end": "2026-03-28", "hours": 32, "status": "Submitted", "month": "Mar 2026", "rate": 39.2, "billed": 1254.4}, {"name": "Lalitha Guggilam", "start": "2026-03-29", "end": "2026-04-04", "hours": 37, "status": "Submitted", "month": "Apr 2026", "rate": 39.2, "billed": 1450.4}, {"name": "Lalitha Guggilam", "start": "2026-04-05", "end": "2026-04-11", "hours": 38, "status": "Submitted", "month": "Apr 2026", "rate": 39.2, "billed": 1489.6}, {"name": "Lalitha Guggilam", "start": "2026-04-12", "end": "2026-04-18", "hours": 36, "status": "Submitted", "month": "Apr 2026", "rate": 39.2, "billed": 1411.2}, {"name": "Lalitha Guggilam", "start": "2026-04-19", "end": "2026-04-25", "hours": 37, "status": "Submitted", "month": "Apr 2026", "rate": 39.2, "billed": 1450.4}, {"name": "Lalitha Guggilam", "start": "2026-04-26", "end": "2026-05-02", "hours": 24, "status": "Submitted", "month": "May 2026", "rate": 39.2, "billed": 940.8}, {"name": "Lalitha Guggilam", "start": "2026-05-03", "end": "2026-05-09", "hours": 40, "status": "Submitted", "month": "May 2026", "rate": 39.2, "billed": 1568.0}, {"name": "Priyatham Kommineni", "start": "2026-05-03", "end": "2026-05-09", "hours": 40, "status": "Approved", "month": "May 2026", "rate": 51.94, "billed": 2077.6}, {"name": "Lalitha Guggilam", "start": "2026-05-10", "end": "2026-05-16", "hours": 36, "status": "Submitted", "month": "May 2026", "rate": 39.2, "billed": 1411.2}, {"name": "Priyatham Kommineni", "start": "2026-05-10", "end": "2026-05-16", "hours": 40, "status": "Approved", "month": "May 2026", "rate": 51.94, "billed": 2077.6}, {"name": "Naveena Palakala", "start": "2026-05-10", "end": "2026-05-16", "hours": 24, "status": "Approved", "month": "May 2026", "rate": 107.8, "billed": 2587.2}, {"name": "Lalitha Guggilam", "start": "2026-05-17", "end": "2026-05-23", "hours": 40, "status": "Submitted", "month": "May 2026", "rate": 39.2, "billed": 1568.0}, {"name": "Priyatham Kommineni", "start": "2026-05-17", "end": "2026-05-23", "hours": 40, "status": "Approved", "month": "May 2026", "rate": 51.94, "billed": 2077.6}, {"name": "Naveena Palakala", "start": "2026-05-17", "end": "2026-05-23", "hours": 0, "status": "Approved", "month": "May 2026", "rate": 107.8, "billed": 0.0}, {"name": "Lalitha Guggilam", "start": "2026-05-24", "end": "2026-05-30", "hours": 32, "status": "Submitted", "month": "May 2026", "rate": 39.2, "billed": 1254.4}, {"name": "Priyatham Kommineni", "start": "2026-05-24", "end": "2026-05-30", "hours": 32, "status": "Approved", "month": "May 2026", "rate": 51.94, "billed": 1662.08}, {"name": "Naveena Palakala", "start": "2026-05-24", "end": "2026-05-30", "hours": 32, "status": "Approved", "month": "May 2026", "rate": 107.8, "billed": 3449.6}, {"name": "Priyatham Kommineni", "start": "2026-05-31", "end": "2026-06-06", "hours": 40, "status": "Approved", "month": "Jun 2026", "rate": 51.94, "billed": 2077.6}, {"name": "Naveena Palakala", "start": "2026-05-31", "end": "2026-06-06", "hours": 40, "status": "Approved", "month": "Jun 2026", "rate": 107.8, "billed": 4312.0}], "rates": {"Lalitha Guggilam": 39.2, "Naveena Palakala": 107.8, "Priyatham Kommineni": 51.94}};
+let RATES = INITIAL.rates;
+let DATA  = INITIAL.records;
+
+// ── AVATARS ──────────────────────────────────────────────────────────
+const AVATAR_COLORS = ['#1A56DB','#0891B2','#059669','#D97706','#7C3AED','#DC2626'];
+const avatarMap = {};
+let avatarIdx = 0;
+function avatarColor(name) {
+  if (!avatarMap[name]) avatarMap[name] = AVATAR_COLORS[avatarIdx++ % AVATAR_COLORS.length];
+  return avatarMap[name];
+}
+function initials(name) { return name.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+
+// ── FORMAT ───────────────────────────────────────────────────────────
+function fmtDate(s) {
+  const d = new Date(s + 'T00:00:00');
+  return d.toLocaleDateString('en-CA', {month:'short', day:'numeric', year:'numeric'});
+}
+function fmtC(v) { return '$' + Number(v).toLocaleString('en-CA', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtN(v) { return Number(v).toLocaleString('en-CA'); }
+
+// ── FILTERS ──────────────────────────────────────────────────────────
+let sortKey = 'start', sortAsc = true;
+
+function populateFilters() {
+  const names  = [...new Set(DATA.map(d=>d.name))].sort();
+  const months = [...new Set(DATA.map(d=>d.month))];
+  const sn = document.getElementById('fName');
+  const sm = document.getElementById('fMonth');
+  const cn = sn.value, cm = sm.value;
+  sn.innerHTML = '<option value="">All contractors</option>' + names.map(n=>`<option${n===cn?' selected':''}>${n}</option>`).join('');
+  sm.innerHTML = '<option value="">All months</option>'      + months.map(m=>`<option${m===cm?' selected':''}>${m}</option>`).join('');
+}
+
+function getFiltered() {
+  const n = document.getElementById('fName').value;
+  const m = document.getElementById('fMonth').value;
+  const s = document.getElementById('fStatus').value;
+  let rows = DATA.filter(d => (!n||d.name===n) && (!m||d.month===m) && (!s||d.status===s));
+  rows = [...rows].sort((a,b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (typeof av === 'string') av = av.toLowerCase(), bv = bv.toLowerCase();
+    return sortAsc ? (av>bv?1:-1) : (av<bv?1:-1);
+  });
+  return rows;
+}
+
+function resetFilters() {
+  ['fName','fMonth','fStatus'].forEach(id => document.getElementById(id).value='');
+  render();
+}
+
+// ── SORT ─────────────────────────────────────────────────────────────
+function sortTable(key) {
+  if (sortKey === key) sortAsc = !sortAsc; else { sortKey = key; sortAsc = true; }
+  document.querySelectorAll('.dt-table th').forEach(th => { th.classList.remove('sort-asc','sort-desc'); });
+  const ths = document.querySelectorAll('.dt-table th');
+  const keys = ['name','start','end','month','hours','rate','billed','status'];
+  const idx = keys.indexOf(key);
+  if (idx >= 0) ths[idx].classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+  render();
+}
+
+// ── CHARTS ───────────────────────────────────────────────────────────
+let chartC=null, chartM=null, chartH=null;
+const PAL = ['#1A56DB','#0891B2','#059669','#D97706','#7C3AED','#DC2626'];
+
+function renderCharts(rows) {
+  const byN={}, byM={}, byNH={};
+  rows.forEach(r => {
+    byN[r.name]  = (byN[r.name]||0)  + r.billed;
+    byM[r.month] = (byM[r.month]||0) + r.billed;
+    byNH[r.name] = (byNH[r.name]||0) + r.hours;
+  });
+  const nL=Object.keys(byN), nV=nL.map(k=>+byN[k].toFixed(2));
+  const mL=Object.keys(byM), mV=mL.map(k=>+byM[k].toFixed(2));
+  const hL=Object.keys(byNH), hV=hL.map(k=>byNH[k]);
+  document.getElementById('bc-badge').textContent = fmtC(nV.reduce((a,v)=>a+v,0));
+
+  const gridColor = 'rgba(148,163,184,0.15)';
+  const tickFont = {size:10, family:'-apple-system,sans-serif'};
+  const dollarCB = v => '$'+v.toLocaleString();
+
+  if (chartC) chartC.destroy();
+  chartC = new Chart(document.getElementById('chartContractor'), {
+    type:'bar',
+    data:{ labels:nL, datasets:[{ data:nV, backgroundColor:nL.map((_,i)=>PAL[i%PAL.length]), borderRadius:4, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ' '+fmtC(ctx.raw) } } },
+      scales:{ y:{ ticks:{callback:dollarCB,font:tickFont}, grid:{color:gridColor} },
+               x:{ ticks:{font:tickFont,maxRotation:15}, grid:{display:false} } } }
+  });
+
+  if (chartM) chartM.destroy();
+  chartM = new Chart(document.getElementById('chartMonth'), {
+    type:'bar',
+    data:{ labels:mL, datasets:[{ data:mV, backgroundColor:'#1A56DB', borderRadius:4, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ' '+fmtC(ctx.raw) } } },
+      scales:{ y:{ ticks:{callback:dollarCB,font:tickFont}, grid:{color:gridColor} },
+               x:{ ticks:{font:tickFont,autoSkip:false,maxRotation:20}, grid:{display:false} } } }
+  });
+
+  if (chartH) chartH.destroy();
+  chartH = new Chart(document.getElementById('chartHours'), {
+    type:'doughnut',
+    data:{ labels:hL, datasets:[{ data:hV, backgroundColor:hL.map((_,i)=>PAL[i%PAL.length]), borderWidth:2, borderColor:'#fff' }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'65%',
+      plugins:{ legend:{ position:'bottom', labels:{ font:tickFont, padding:12, boxWidth:10, boxHeight:10 } },
+                tooltip:{ callbacks:{ label: ctx => ' '+ctx.label+': '+ctx.raw+' hrs' } } } }
+  });
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────
+function render() {
+  const rows = getFiltered();
+  const th   = rows.reduce((a,r)=>a+r.hours,0);
+  const tb   = rows.reduce((a,r)=>a+r.billed,0);
+  const nc   = [...new Set(rows.map(r=>r.name))].length;
+  const nm   = [...new Set(rows.map(r=>r.month))].length;
+  const totRecs = DATA.length;
+  document.getElementById('filterInfo').textContent =
+    rows.length < totRecs ? `Showing ${rows.length} of ${totRecs} records` : `${totRecs} records`;
+
+  // KPIs
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi k1"><div class="kpi-label">Total billed</div><div class="kpi-value">${fmtC(tb)}</div><div class="kpi-sub">${rows.length} timesheets · ${nc} contractor${nc!==1?'s':''}</div></div>
+    <div class="kpi k2"><div class="kpi-label">Billable hours</div><div class="kpi-value">${fmtN(th)}</div><div class="kpi-sub">across ${nm} month${nm!==1?'s':''}</div></div>
+    <div class="kpi k3"><div class="kpi-label">Avg rate</div><div class="kpi-value">${rows.length ? '$'+(rows.reduce((a,r)=>a+r.rate,0)/rows.length).toFixed(2) : '—'}</div><div class="kpi-sub">per hour · unweighted</div></div>
+    <div class="kpi k4"><div class="kpi-label">Avg weekly hours</div><div class="kpi-value">${rows.length ? (th/rows.length).toFixed(1) : '—'}</div><div class="kpi-sub">per timesheet submission</div></div>
+  `;
+
+  // Summary — by contractor
+  const byNC={}, byNH2={};
+  rows.forEach(r=>{ byNC[r.name]=(byNC[r.name]||0)+r.billed; byNH2[r.name]=(byNH2[r.name]||0)+r.hours; });
+  const maxB = Math.max(...Object.values(byNC),1);
+  document.getElementById('sumContractor').innerHTML = Object.keys(byNC).map(n=>`
+    <tr>
+      <td><span class="avatar" style="background:${avatarColor(n)}">${initials(n)}</span>${n}</td>
+      <td class="num">${fmtN(byNH2[n])}</td>
+      <td class="num">${fmtC(byNC[n])}</td>
+      <td style="min-width:80px"><div class="bar-bg"><div class="bar-fill" style="width:${(byNC[n]/maxB*100).toFixed(1)}%;background:${avatarColor(n)}"></div></div></td>
+    </tr>`).join('');
+  document.getElementById('sumContractorFoot').innerHTML = `<tr class="tot"><td><b>Total</b></td><td class="num"><b>${fmtN(th)}</b></td><td class="num"><b>${fmtC(tb)}</b></td><td></td></tr>`;
+
+  // Summary — by month
+  const byMC={}, byMH={};
+  rows.forEach(r=>{ byMC[r.month]=(byMC[r.month]||0)+r.billed; byMH[r.month]=(byMH[r.month]||0)+r.hours; });
+  const maxBM = Math.max(...Object.values(byMC),1);
+  document.getElementById('sumMonth').innerHTML = Object.keys(byMC).map(m=>`
+    <tr>
+      <td>${m}</td>
+      <td class="num">${fmtN(byMH[m])}</td>
+      <td class="num">${fmtC(byMC[m])}</td>
+      <td style="min-width:80px"><div class="bar-bg"><div class="bar-fill" style="width:${(byMC[m]/maxBM*100).toFixed(1)}%"></div></div></td>
+    </tr>`).join('');
+  document.getElementById('sumMonthFoot').innerHTML = `<tr class="tot"><td><b>Total</b></td><td class="num"><b>${fmtN(th)}</b></td><td class="num"><b>${fmtC(tb)}</b></td><td></td></tr>`;
+
+  // Detail table
+  document.getElementById('dtCount').textContent = `${rows.length} rows`;
+  document.getElementById('dtBody').innerHTML = rows.map((r,i)=>`
+    <tr class="${i%2===1?'even':''}">
+      <td class="name-cell"><span class="avatar" style="background:${avatarColor(r.name)}">${initials(r.name)}</span>${r.name}</td>
+      <td>${fmtDate(r.start)}</td>
+      <td>${fmtDate(r.end)}</td>
+      <td>${r.month}</td>
+      <td class="num">${r.hours}</td>
+      <td class="num">$${Number(r.rate).toFixed(2)}</td>
+      <td class="num" style="font-weight:600">${fmtC(r.billed)}</td>
+      <td><span class="badge badge-${r.status==='Approved'?'a':'s'}">${r.status}</span></td>
+    </tr>`).join('');
+  document.getElementById('dtFoot').innerHTML = `
+    <tr><td colspan="4">Total</td><td class="num">${th}</td><td></td><td class="num">${fmtC(tb)}</td><td></td></tr>`;
+
+  renderCharts(rows);
+}
+
+// ── UPLOAD ───────────────────────────────────────────────────────────
+function openUpload()  { document.getElementById('uploadOverlay').classList.add('open'); }
+function closeUpload() { document.getElementById('uploadOverlay').classList.remove('open'); }
+
+function handleDrop(e) {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      let newRows = [];
+      if (file.name.endsWith('.csv')) {
+        const lines = ev.target.result.split('\n').filter(Boolean);
+        const headers = lines[0].split(',').map(h=>h.trim().replace(/"/g,''));
+        const iN  = headers.indexOf('Contractor Name');
+        const iS  = headers.indexOf('Timesheet Start Date');
+        const iE  = headers.indexOf('Timesheet End Date');
+        const iH  = headers.indexOf('Total Billable Hours');
+        const iSt = headers.indexOf('Status');
+        if (iN < 0) { showToast('Column "Contractor Name" not found — check CSV headers'); return; }
+        for (let i=1;i<lines.length;i++) {
+          const cols = lines[i].split(',').map(c=>c.trim().replace(/"/g,''));
+          if (!cols[iN]) continue;
+          const rate = RATES[cols[iN]] || 0;
+          const hrs  = parseFloat(cols[iH]) || 0;
+          const end  = cols[iE] || '';
+          const mo   = end ? new Date(end+'T00:00:00').toLocaleDateString('en-CA',{month:'short',year:'numeric'}) : '';
+          newRows.push({name:cols[iN],start:cols[iS]||'',end,hours:hrs,status:cols[iSt]||'',month:mo,rate,billed:+(hrs*rate).toFixed(2)});
+        }
+      } else {
+        // xlsx
+        const wb = XLSX.read(ev.target.result, {type:'array', cellDates:true});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const json = XLSX.utils.sheet_to_json(ws, {raw:false});
+        for (const row of json) {
+          const name = row['Contractor Name']; if (!name) continue;
+          const rate  = RATES[name] || 0;
+          const hrs   = parseFloat(row['Total Billable Hours']) || 0;
+          const startRaw = row['Timesheet Start Date'] || '';
+          const endRaw   = row['Timesheet End Date']   || '';
+          const fmt = s => { try { return new Date(s).toISOString().slice(0,10); } catch(e){ return s; } };
+          const end = fmt(endRaw);
+          const mo  = end ? new Date(end+'T00:00:00').toLocaleDateString('en-CA',{month:'short',year:'numeric'}) : '';
+          newRows.push({name,start:fmt(startRaw),end,hours:hrs,status:row['Status']||'',month:mo,rate,billed:+(hrs*rate).toFixed(2)});
+        }
+      }
+      if (!newRows.length) { showToast('No rows found — check file format'); return; }
+      // deduplicate by name+start+end
+      const existing = new Set(DATA.map(d=>d.name+'|'+d.start+'|'+d.end));
+      const added = newRows.filter(r=>!existing.has(r.name+'|'+r.start+'|'+r.end));
+      DATA = [...DATA, ...added];
+      closeUpload();
+      populateFilters();
+      render();
+      showToast(`✓ ${added.length} new row${added.length!==1?'s':''} added (${newRows.length-added.length} duplicates skipped)`);
+    } catch(err) { showToast('Error reading file: ' + err.message); }
+  };
+  if (file.name.endsWith('.csv')) reader.readAsText(file);
+  else reader.readAsArrayBuffer(file);
+}
+
+// ── EXPORT ───────────────────────────────────────────────────────────
+function exportCSV() {
+  const rows = getFiltered();
+  const headers = ['Contractor Name','Timesheet Start Date','Timesheet End Date',
+                   'Total Billable Hours','Month','Rate ($/hr)','Billed ($)','Status'];
+  const lines = [headers.join(','), ...rows.map(r=>[
+    `"${r.name}"`, r.start, r.end, r.hours, `"${r.month}"`,
+    r.rate.toFixed(2), r.billed.toFixed(2), r.status
+  ].join(','))];
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `Kochasoft_Billing_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast('✓ CSV downloaded');
+}
+
+function printReport() { window.print(); }
+
+// ── TOAST ────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 3500);
+}
+
+// ── DRAG HIGHLIGHT ───────────────────────────────────────────────────
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => { dz.classList.remove('drag'); handleDrop(e); });
+
+// ── INIT ─────────────────────────────────────────────────────────────
+populateFilters();
+render();
+</script>
+</body>
+</html>
