@@ -3,33 +3,52 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Kochasoft — CFO Dashboard</title>
+<title>Kochasoft — VF Corp CFO Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --navy:#0F2444;--navy2:#1A3560;--blue:#1A56DB;--blue2:#3B82F6;--teal:#0891B2;
-  --green:#059669;--amber:#D97706;--red:#DC2626;--purple:#7C3AED;
+  --green:#059669;--amber:#D97706;--red:#DC2626;--purple:#7C3AED;--orange:#EA580C;
   --bg:#F0F4F8;--surface:#fff;--surf2:#F8FAFC;--border:#E2E8F0;
   --text1:#0F172A;--text2:#475569;--text3:#94A3B8;--r:8px;--rl:12px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text1);font-size:13px}
-.topnav{background:var(--navy);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200}
-.brand{display:flex;align-items:center;gap:10px}
+
+/* NAV */
+.topnav{background:var(--navy);padding:0 16px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;gap:12px}
+.brand{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .brand-dot{width:8px;height:8px;border-radius:50%;background:#38BDF8}
-.brand-name{font-size:14px;font-weight:600;color:#fff}
-.brand-sub{font-size:11px;color:rgba(255,255,255,.4);margin-left:6px}
-.nav-tabs{display:flex;gap:2px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px}
-.nav-tab{font-size:11px;padding:5px 11px;border-radius:6px;cursor:pointer;color:rgba(255,255,255,.6);border:none;background:transparent;font-weight:500;transition:all .15s}
+.brand-name{font-size:14px;font-weight:700;color:#fff}
+.client-badge{font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(56,189,248,.2);color:#38BDF8;font-weight:600;border:1px solid rgba(56,189,248,.3)}
+.nav-tabs{display:flex;gap:2px;background:rgba(255,255,255,.08);border-radius:8px;padding:3px;flex-shrink:0}
+.nav-tab{font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;color:rgba(255,255,255,.6);border:none;background:transparent;font-weight:500;transition:all .15s;white-space:nowrap}
 .nav-tab.active{background:#fff;color:var(--navy)}
-.nav-actions{display:flex;gap:6px;align-items:center}
-.nb{font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:500;transition:opacity .15s;display:inline-flex;align-items:center;gap:4px;border:1px solid transparent}
+.nav-actions{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.nb{font-size:11px;padding:5px 10px;border-radius:6px;cursor:pointer;font-weight:500;border:1px solid transparent;display:inline-flex;align-items:center;gap:4px;transition:opacity .15s}
 .nb:hover{opacity:.85}
 .nb-ghost{background:transparent;border-color:rgba(255,255,255,.2);color:rgba(255,255,255,.75)}
 .nb-accent{background:#38BDF8;border-color:#38BDF8;color:var(--navy)}
-.page{max-width:1280px;margin:0 auto;padding:18px 18px 40px;display:none}
+
+/* CLIENT / PROJECT FILTER BAR */
+.client-bar{background:var(--navy2);padding:8px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.08)}
+.cbar-label{font-size:11px;font-weight:600;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.5px}
+.proj-pill{font-size:11px;padding:4px 12px;border-radius:20px;cursor:pointer;font-weight:600;border:1.5px solid transparent;transition:all .15s}
+.proj-pill.all{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}
+.proj-pill.all.active{background:#38BDF8;border-color:#38BDF8;color:var(--navy)}
+.proj-pill.vndly{background:rgba(26,86,219,.2);border-color:rgba(26,86,219,.4);color:#93C5FD}
+.proj-pill.vndly.active{background:#1A56DB;border-color:#1A56DB;color:#fff}
+.proj-pill.gdf{background:rgba(124,58,237,.2);border-color:rgba(124,58,237,.4);color:#C4B5FD}
+.proj-pill.gdf.active{background:#7C3AED;border-color:#7C3AED;color:#fff}
+.cbar-stats{margin-left:auto;display:flex;gap:16px}
+.cstat{font-size:11px;color:rgba(255,255,255,.5)}.cstat b{color:rgba(255,255,255,.85)}
+
+/* LAYOUT */
+.page{max-width:1300px;margin:0 auto;padding:16px 16px 40px;display:none}
 .page.active{display:block}
+
+/* KPI */
 .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%}
@@ -37,17 +56,31 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .kpi-label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
 .kpi-value{font-size:22px;font-weight:700;color:var(--text1);line-height:1;margin-bottom:2px}
 .kpi-sub{font-size:11px;color:var(--text3)}
-.kpi-delta{font-size:11px;font-weight:600}
-.kpi-delta.up{color:var(--green)}.kpi-delta.dn{color:var(--red)}
+.kpi-delta{font-size:11px;font-weight:600}.kpi-delta.up{color:var(--green)}.kpi-delta.dn{color:var(--red)}
+
+/* CHARTS */
 .chart-grid-3{display:grid;grid-template-columns:1.2fr 1fr .8fr;gap:12px;margin-bottom:16px}
 .chart-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px}
 .cc-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
 .cc-title{font-size:12px;font-weight:600;color:var(--text2)}
 .cc-badge{font-size:10px;padding:2px 7px;border-radius:20px;background:#EFF6FF;color:var(--blue);font-weight:600}
+
+/* PROJECT COMPARISON CARD */
+.proj-compare{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.pcomp{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:16px;position:relative;overflow:hidden}
+.pcomp::after{content:'';position:absolute;top:0;right:0;width:3px;height:100%}
+.pcomp.vndly::after{background:var(--blue)}.pcomp.gdf::after{background:var(--purple)}
+.pcomp-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.pcomp.vndly .pcomp-title{color:var(--blue)}.pcomp.gdf .pcomp-title{color:var(--purple)}
+.pcomp-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+.pcomp-row:last-child{border-bottom:none}
+.pcomp-lbl{color:var(--text2)}.pcomp-val{font-weight:600}
+
+/* TABLES */
 .tbl-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);overflow:hidden;margin-bottom:16px}
 .tbl-head{padding:11px 14px;background:var(--navy);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:space-between}
-.tbl-head2{padding:10px 14px;background:var(--navy2);color:#fff;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.tbl-head2{padding:10px 14px;background:var(--navy2);color:#fff;font-size:11px;font-weight:600}
 .dtbl{width:100%;border-collapse:collapse;font-size:12px}
 .dtbl th{padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);background:var(--surf2);white-space:nowrap;cursor:pointer;user-select:none}
 .dtbl th:hover{color:var(--blue)}
@@ -60,74 +93,77 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .num{text-align:right}
 .badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600}
 .ba{background:#D1FAE5;color:#065F46}.bs{background:#DBEAFE;color:#1E40AF}
-.bp{background:#EDE9FE;color:#5B21B6}.br{background:#FEE2E2;color:#991B1B}
+.bp{background:#EDE9FE;color:#5B21B6}.bnb{background:#FEF3C7;color:#92400E}
+.bvndly{background:#DBEAFE;color:#1E40AF}.bgdf{background:#EDE9FE;color:#5B21B6}
 .avatar{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:9px;font-weight:700;color:#fff;margin-right:5px;vertical-align:middle;flex-shrink:0}
-.profit-bar{background:var(--border);height:4px;border-radius:2px;margin-top:2px;min-width:40px}
+.profit-bar{background:var(--border);height:4px;border-radius:2px;margin-top:2px}
 .profit-fill{height:4px;border-radius:2px}
 .var-pos{color:var(--green);font-weight:600}.var-neg{color:var(--red);font-weight:600}.var-neu{color:var(--text3)}
+
+/* FILTERS */
 .fbar{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:10px 14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
 .fl{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
 .fbar select{font-size:12px;padding:5px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surf2);color:var(--text1);cursor:pointer}
 .freset{margin-left:auto;font-size:12px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text2)}
-.freset:hover{background:var(--surf2)}
-.rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:16px}
-.rc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:14px}
-.rc-name{font-weight:600;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
-.rc-row{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)}
+
+/* RATE CARD */
+.rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;margin-bottom:16px}
+.rc-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:12px}
+.rc-name{font-weight:600;font-size:12px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.rc-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-bottom:1px solid var(--border)}
 .rc-row:last-child{border-bottom:none}
 .rc-lbl{color:var(--text2)}.rc-val{font-weight:600}
 .rc-val.cost{color:var(--red)}.rc-val.bill{color:var(--blue)}.rc-val.margin{color:var(--green)}
+
+/* MONTHLY TOGGLE */
 .toggle-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
 .toggle-btns{display:flex;gap:6px}
 .tbtn{font-size:11px;padding:6px 14px;border-radius:6px;cursor:pointer;font-weight:500;border:1px solid var(--border);background:var(--surf2);color:var(--text2);transition:all .15s}
 .tbtn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* MODAL */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;align-items:center;justify-content:center}
 .modal-bg.open{display:flex}
-.modal{background:var(--surface);border-radius:16px;padding:24px 28px;max-width:500px;width:92%;max-height:90vh;overflow-y:auto}
+.modal{background:var(--surface);border-radius:16px;padding:24px 28px;max-width:520px;width:92%;max-height:90vh;overflow-y:auto}
 .modal-title{font-size:15px;font-weight:700;margin-bottom:4px}
 .modal-sub{font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.5}
-.utype-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
-.utype-card{border:1.5px solid var(--border);border-radius:var(--rl);padding:14px 10px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
+.utype-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.utype-card{border:1.5px solid var(--border);border-radius:var(--rl);padding:12px 8px;text-align:center;cursor:pointer;transition:all .15s}
 .utype-card:hover{border-color:var(--blue2);background:#EFF6FF}
 .utype-card.active{border-color:var(--blue);background:#EFF6FF;box-shadow:0 0 0 3px rgba(26,86,219,.1)}
-.utype-icon{font-size:22px;margin-bottom:6px}
-.utype-title{font-size:12px;font-weight:600;color:var(--text1)}
-.utype-sub{font-size:10px;color:var(--text3);margin-top:3px}
-.uhint{font-size:11px;color:var(--text3);margin-bottom:10px;padding:8px 10px;background:var(--surf2);border-radius:6px;border-left:3px solid var(--blue2)}
-.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;margin-bottom:14px}
+.utype-icon{font-size:20px;margin-bottom:5px}
+.utype-title{font-size:11px;font-weight:600;color:var(--text1)}
+.utype-sub{font-size:10px;color:var(--text3);margin-top:2px}
+.uhint{font-size:11px;color:var(--text3);margin-bottom:10px;padding:8px 10px;background:var(--surf2);border-radius:6px;border-left:3px solid var(--blue2);line-height:1.5}
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:all .15s;margin-bottom:14px}
 .drop-zone:hover,.drop-zone.drag{border-color:var(--blue2);background:#EFF6FF}
-.drop-icon{font-size:28px;margin-bottom:6px}
-.drop-text{font-size:12px;color:var(--text2)}
-.drop-hint{font-size:11px;color:var(--text3);margin-top:3px}
 .modal-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
 .btn-cancel{padding:7px 14px;border:1px solid var(--border);border-radius:7px;background:transparent;cursor:pointer;font-size:12px;color:var(--text2)}
-.btn-cancel:hover{background:var(--surf2)}
 .btn-primary{padding:7px 14px;border:none;border-radius:7px;background:var(--blue);cursor:pointer;font-size:12px;color:#fff;font-weight:600}
-.btn-primary:hover{background:#1548c0}
 .rc-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:10px}
-.rc-tbl th{padding:6px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--border);background:var(--surf2)}
-.rc-tbl td{padding:7px 10px;border-bottom:1px solid var(--border)}
-.rc-tbl tr:last-child td{border-bottom:none}
+.rc-tbl th{padding:6px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;background:var(--surf2);border-bottom:1px solid var(--border)}
+.rc-tbl td{padding:6px 10px;border-bottom:1px solid var(--border)}
 .rc-tbl input{width:100%;font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surf2)}
 .del-btn{background:none;border:none;cursor:pointer;color:var(--red);font-size:13px;padding:2px 4px}
-.add-row-btn{font-size:12px;padding:5px 12px;border:1px dashed var(--border);border-radius:6px;background:transparent;cursor:pointer;color:var(--blue);font-weight:500;margin-bottom:12px}
-.add-row-btn:hover{background:var(--surf2)}
+.add-row-btn{font-size:12px;padding:5px 12px;border:1px dashed var(--border);border-radius:6px;background:transparent;cursor:pointer;color:var(--blue);font-weight:500;margin-bottom:10px}
 .toast{position:fixed;bottom:20px;right:20px;z-index:999;background:var(--navy);color:#fff;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:500;opacity:0;pointer-events:none;transition:opacity .25s;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .toast.show{opacity:1}
-@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}.chart-grid-3,.chart-grid-2{grid-template-columns:1fr}}
-@media print{.topnav,.fbar,.nav-actions,.modal-bg,.toast{display:none!important}.page{padding:0}}
+@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}.chart-grid-3,.chart-grid-2,.proj-compare{grid-template-columns:1fr}}
+@media print{.topnav,.client-bar,.fbar,.modal-bg,.toast{display:none!important}.page{padding:0}}
 </style>
 </head>
 <body>
 
+<!-- NAV -->
 <nav class="topnav">
   <div class="brand">
     <div class="brand-dot"></div>
     <span class="brand-name">Kochasoft</span>
-    <span class="brand-sub">CFO Dashboard</span>
+    <span class="client-badge">VF Corp</span>
   </div>
   <div class="nav-tabs">
     <button class="nav-tab" data-tab="overview">Overview</button>
+    <button class="nav-tab" data-tab="compare">Project Compare</button>
     <button class="nav-tab" data-tab="profitability">Profitability</button>
     <button class="nav-tab" data-tab="monthly">Monthly P&amp;L</button>
     <button class="nav-tab" data-tab="variance">Variance</button>
@@ -141,46 +177,50 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </nav>
 
+<!-- CLIENT / PROJECT FILTER BAR -->
+<div class="client-bar">
+  <span class="cbar-label">VF Corp</span>
+  <button class="proj-pill all active" id="pill-all" onclick="setProjectFilter('all')">All Projects</button>
+  <button class="proj-pill vndly" id="pill-vndly" onclick="setProjectFilter('VNDLY-Contingency Labour')">VNDLY-Contingency Labour</button>
+  <button class="proj-pill gdf" id="pill-gdf" onclick="setProjectFilter('VFC-GDF 2.0')">VFC-GDF 2.0</button>
+  <div class="cbar-stats">
+    <span class="cstat">Revenue: <b id="cs-rev">—</b></span>
+    <span class="cstat">Profit: <b id="cs-profit">—</b></span>
+    <span class="cstat">Margin: <b id="cs-margin">—</b></span>
+    <span class="cstat">Hours: <b id="cs-hours">—</b></span>
+  </div>
+</div>
+
 <!-- UPLOAD MODAL -->
 <div class="modal-bg" id="uploadModal">
   <div class="modal">
     <div class="modal-title">Upload file</div>
-    <div class="modal-sub">Choose what you're uploading, then drop or browse for your Excel/CSV file.</div>
+    <div class="modal-sub">Choose the file type, then drop your Excel/CSV. GDF multi-tab files are auto-parsed.</div>
     <div class="utype-grid">
-      <div class="utype-card active" id="ucard-timesheet" onclick="setUploadType('timesheet')">
-        <div class="utype-icon">📋</div>
-        <div class="utype-title">VNDLY Timesheet</div>
-        <div class="utype-sub">Hours &amp; status</div>
-      </div>
-      <div class="utype-card" id="ucard-costcard" onclick="setUploadType('costcard')">
-        <div class="utype-icon">💰</div>
-        <div class="utype-title">Cost Card</div>
-        <div class="utype-sub">Bill &amp; cost rates</div>
-      </div>
-      <div class="utype-card" id="ucard-projectmap" onclick="setUploadType('projectmap')">
-        <div class="utype-icon">🗂️</div>
-        <div class="utype-title">Project Mapping</div>
-        <div class="utype-sub">Contractor → project</div>
-      </div>
+      <div class="utype-card active" id="ucard-vndly" onclick="setUploadType('vndly')"><div class="utype-icon">📋</div><div class="utype-title">VNDLY Timesheet</div><div class="utype-sub">Contingency Labour</div></div>
+      <div class="utype-card" id="ucard-gdf" onclick="setUploadType('gdf')"><div class="utype-icon">📊</div><div class="utype-title">GDF Project</div><div class="utype-sub">Multi-tab .xls file</div></div>
+      <div class="utype-card" id="ucard-costcard" onclick="setUploadType('costcard')"><div class="utype-icon">💰</div><div class="utype-title">Cost Card</div><div class="utype-sub">Bill &amp; cost rates</div></div>
+      <div class="utype-card" id="ucard-projectmap" onclick="setUploadType('projectmap')"><div class="utype-icon">🗂️</div><div class="utype-title">Project Mapping</div><div class="utype-sub">Contractor → project</div></div>
+      <div class="utype-card" id="ucard-gdfrate" onclick="setUploadType('gdfrate')"><div class="utype-icon">💵</div><div class="utype-title">GDF Rate Card</div><div class="utype-sub">Name · Bill · Cost tabs</div></div>
     </div>
-    <div class="uhint" id="uploadHint">Required: Contractor Name · Timesheet Start Date · Timesheet End Date · Total Billable Hours · Status</div>
+    <div class="uhint" id="uploadHint">Columns: Contractor Name · Timesheet Start Date · Timesheet End Date · Total Billable Hours · Status</div>
     <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
-      <div class="drop-icon">📂</div>
-      <div class="drop-text">Click or drag &amp; drop your file here</div>
-      <div class="drop-hint">.xlsx or .csv accepted</div>
+      <div style="font-size:28px;margin-bottom:6px">📂</div>
+      <div style="font-size:12px;color:var(--text2)">Click or drag &amp; drop your file here</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px">.xlsx, .xls or .csv accepted</div>
     </div>
-    <input type="file" id="fileInput" accept=".xlsx,.csv" style="display:none" onchange="handleFile(event)">
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFile(event)">
     <div class="modal-btns"><button class="btn-cancel" onclick="closeModal('uploadModal')">Cancel</button></div>
   </div>
 </div>
 
-<!-- RATE CARD EDITOR MODAL -->
+<!-- RATE CARD EDITOR -->
 <div class="modal-bg" id="rcModal">
-  <div class="modal" style="max-width:620px">
+  <div class="modal" style="max-width:660px">
     <div class="modal-title">Rate card — edit / add contractor</div>
-    <div class="modal-sub">Set billing rate (charged to client), cost rate (your contractor cost), and project.</div>
+    <div class="modal-sub">Bill rate = charged to client. Cost rate = your contractor cost. Project = VNDLY or GDF.</div>
     <table class="rc-tbl">
-      <thead><tr><th>Contractor</th><th>Bill $/hr</th><th>Cost $/hr</th><th>Project</th><th></th></tr></thead>
+      <thead><tr><th>Contractor</th><th>Project</th><th>Bill $/hr</th><th>Cost $/hr</th><th></th></tr></thead>
       <tbody id="rcEditorBody"></tbody>
     </table>
     <button class="add-row-btn" onclick="addRateRow()">+ Add contractor</button>
@@ -199,7 +239,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="chart-grid-3">
     <div class="chart-card"><div class="cc-head"><span class="cc-title">Revenue by contractor</span><span class="cc-badge" id="rev-badge"></span></div><div style="position:relative;height:190px"><canvas id="cRevContractor"></canvas></div></div>
     <div class="chart-card"><div class="cc-head"><span class="cc-title">Revenue by month</span></div><div style="position:relative;height:190px"><canvas id="cRevMonth"></canvas></div></div>
-    <div class="chart-card"><div class="cc-head"><span class="cc-title">Hours split</span></div><div style="position:relative;height:190px"><canvas id="cHours"></canvas></div></div>
+    <div class="chart-card"><div class="cc-head"><span class="cc-title">Hours by project</span></div><div style="position:relative;height:190px"><canvas id="cHours"></canvas></div></div>
   </div>
   <div class="chart-grid-2">
     <div class="chart-card"><div class="cc-head"><span class="cc-title">Revenue vs Cost vs Profit by month</span></div><div style="position:relative;height:200px"><canvas id="cRvC"></canvas></div></div>
@@ -207,34 +247,42 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- PROJECT COMPARE -->
+<div class="page" id="tab-compare">
+  <div class="proj-compare" id="projCompareCards"></div>
+  <div class="chart-grid-2">
+    <div class="chart-card"><div class="cc-head"><span class="cc-title">Revenue comparison by month</span></div><div style="position:relative;height:220px"><canvas id="cCompRev"></canvas></div></div>
+    <div class="chart-card"><div class="cc-head"><span class="cc-title">Margin % comparison by month</span></div><div style="position:relative;height:220px"><canvas id="cCompMargin"></canvas></div></div>
+  </div>
+  <div class="chart-grid-2">
+    <div class="chart-card"><div class="cc-head"><span class="cc-title">Hours comparison by month</span></div><div style="position:relative;height:200px"><canvas id="cCompHours"></canvas></div></div>
+    <div class="chart-card"><div class="cc-head"><span class="cc-title">Non-billable cost impact (GDF)</span></div><div style="position:relative;height:200px"><canvas id="cNonBill"></canvas></div></div>
+  </div>
+</div>
+
 <!-- PROFITABILITY -->
 <div class="page" id="tab-profitability">
   <div class="kpi-grid" id="kpis-pf"></div>
   <div class="chart-grid-2">
-    <div class="tbl-card">
-      <div class="tbl-head">Contractor profitability</div>
-      <table class="dtbl"><thead><tr><th>Contractor</th><th class="num">Revenue</th><th class="num">Cost</th><th class="num">Gross profit</th><th class="num">Margin</th></tr></thead>
+    <div class="tbl-card"><div class="tbl-head">Contractor profitability</div>
+      <table class="dtbl"><thead><tr><th>Contractor</th><th>Project</th><th class="num">Revenue</th><th class="num">Cost</th><th class="num">Profit</th><th class="num">Margin</th></tr></thead>
       <tbody id="tblContractorProfit"></tbody><tfoot id="tblContractorProfitFoot"></tfoot></table>
     </div>
-    <div class="tbl-card">
-      <div class="tbl-head">Project profitability</div>
-      <table class="dtbl"><thead><tr><th>Project</th><th class="num">Revenue</th><th class="num">Cost</th><th class="num">Gross profit</th><th class="num">Margin</th></tr></thead>
+    <div class="tbl-card"><div class="tbl-head">Project profitability</div>
+      <table class="dtbl"><thead><tr><th>Project</th><th class="num">Revenue</th><th class="num">Cost</th><th class="num">Profit</th><th class="num">Margin</th><th class="num">Non-bill cost</th></tr></thead>
       <tbody id="tblProjectProfit"></tbody><tfoot id="tblProjectProfitFoot"></tfoot></table>
     </div>
   </div>
   <div class="chart-grid-2">
     <div class="chart-card"><div class="cc-head"><span class="cc-title">Margin % by contractor</span></div><div style="position:relative;height:200px"><canvas id="cContractorMargin"></canvas></div></div>
-    <div class="chart-card"><div class="cc-head"><span class="cc-title">Margin % by project</span></div><div style="position:relative;height:200px"><canvas id="cProjectMargin"></canvas></div></div>
+    <div class="chart-card"><div class="cc-head"><span class="cc-title">Revenue vs Profit by project</span></div><div style="position:relative;height:200px"><canvas id="cProjectBar"></canvas></div></div>
   </div>
 </div>
 
 <!-- MONTHLY P&L -->
 <div class="page" id="tab-monthly">
   <div class="toggle-row">
-    <div>
-      <div style="font-size:14px;font-weight:600">Monthly profitability breakdown</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:2px">Revenue · Cost · Profit · Margin by month</div>
-    </div>
+    <div><div style="font-size:14px;font-weight:600">Monthly profitability breakdown</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Revenue · Cost · Profit · Margin — filterable by project</div></div>
     <div class="toggle-btns">
       <button class="tbtn active" id="tbtn-contractor" onclick="setMonthlyView('contractor')">By contractor</button>
       <button class="tbtn" id="tbtn-project" onclick="setMonthlyView('project')">By project</button>
@@ -264,12 +312,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="page" id="tab-variance">
   <div class="kpi-grid" id="kpis-va"></div>
   <div class="tbl-card">
-    <div class="tbl-head">Monthly variance analysis <span style="opacity:.5;font-size:11px;font-weight:400">MoM change vs prior period</span></div>
-    <div style="overflow-x:auto">
-    <table class="dtbl">
-      <thead><tr><th>Month</th><th class="num">Revenue</th><th class="num">MoM Δ</th><th class="num">Cost</th><th class="num">MoM Δ</th><th class="num">Gross profit</th><th class="num">MoM Δ</th><th class="num">Margin %</th><th class="num">MoM Δ pp</th><th class="num">Hours</th><th class="num">MoM Δ</th></tr></thead>
-      <tbody id="tblVariance"></tbody>
-    </table></div>
+    <div class="tbl-head">Monthly variance analysis <span style="opacity:.5;font-size:11px;font-weight:400">MoM change</span></div>
+    <div style="overflow-x:auto"><table class="dtbl"><thead><tr><th>Month</th><th class="num">Revenue</th><th class="num">MoM Δ</th><th class="num">Cost</th><th class="num">MoM Δ</th><th class="num">Profit</th><th class="num">MoM Δ</th><th class="num">Margin %</th><th class="num">MoM Δ pp</th><th class="num">Hours</th><th class="num">MoM Δ</th></tr></thead><tbody id="tblVariance"></tbody></table></div>
   </div>
   <div class="chart-grid-2">
     <div class="chart-card"><div class="cc-head"><span class="cc-title">Revenue waterfall MoM</span></div><div style="position:relative;height:220px"><canvas id="cWaterfall"></canvas></div></div>
@@ -280,16 +324,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- RATE CARD -->
 <div class="page" id="tab-ratecard">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-    <div>
-      <div style="font-size:14px;font-weight:600">Contractor rate card</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:2px">Billing rate = charged to client · Cost rate = your contractor cost</div>
-    </div>
+    <div><div style="font-size:14px;font-weight:600">Contractor rate card — VF Corp</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Both VNDLY and GDF contractors · Bill rate 0 = non-billable (cost only)</div></div>
     <button class="btn-primary" onclick="openModal('rcModal');populateRCEditor()">✏ Edit rate card</button>
   </div>
+  <div style="display:flex;gap:8px;margin-bottom:12px">
+    <button class="tbtn active" id="rc-all" onclick="setRCFilter('all')">All</button>
+    <button class="tbtn" id="rc-vndly" onclick="setRCFilter('VNDLY-Contingency Labour')">VNDLY</button>
+    <button class="tbtn" id="rc-gdf" onclick="setRCFilter('VFC-GDF 2.0')">GDF</button>
+  </div>
   <div class="rc-grid" id="rcGrid"></div>
-  <div class="tbl-card">
-    <div class="tbl-head2">All contractors</div>
-    <table class="dtbl"><thead><tr><th>Contractor</th><th>Project</th><th class="num">Bill $/hr</th><th class="num">Cost $/hr</th><th class="num">Spread $/hr</th><th class="num">Margin %</th></tr></thead>
+  <div class="tbl-card"><div class="tbl-head2">All contractors</div>
+    <table class="dtbl"><thead><tr><th>Contractor</th><th>Project</th><th class="num">Bill $/hr</th><th class="num">Cost $/hr</th><th class="num">Spread $/hr</th><th class="num">Margin %</th><th>Type</th></tr></thead>
     <tbody id="tblRateCard"></tbody></table>
   </div>
 </div>
@@ -299,23 +344,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="fbar">
     <span class="fl">Filter</span>
     <select id="fName" onchange="renderDetail()"><option value="">All contractors</option></select>
+    <select id="fProject" onchange="renderDetail()"><option value="">All projects</option></select>
     <select id="fMonth" onchange="renderDetail()"><option value="">All months</option></select>
-    <select id="fProj" onchange="renderDetail()"><option value="">All projects</option></select>
+    <select id="fBillable" onchange="renderDetail()"><option value="">All types</option><option value="billable">Billable</option><option value="nonbillable">Non-billable</option></select>
     <select id="fStatus" onchange="renderDetail()"><option value="">All statuses</option><option>Approved</option><option>Submitted</option></select>
     <button class="freset" onclick="resetFilters()">✕ Clear</button>
     <span id="filterInfo" style="font-size:11px;color:var(--text3)"></span>
   </div>
   <div class="tbl-card">
-    <div class="tbl-head">Weekly detail <span id="dtCount" style="opacity:.5;font-size:11px;font-weight:400"></span></div>
+    <div class="tbl-head">Transaction detail <span id="dtCount" style="opacity:.5;font-size:11px;font-weight:400"></span></div>
     <div style="overflow-x:auto">
     <table class="dtbl" id="dtTable">
       <thead><tr>
-        <th onclick="sortTable('name')">Contractor</th><th onclick="sortTable('project')">Project</th>
-        <th onclick="sortTable('start')">Start</th><th onclick="sortTable('end')">End</th><th onclick="sortTable('month')">Month</th>
+        <th onclick="sortTable('name')">Contractor</th><th onclick="sortTable('clientProject')">Project</th>
+        <th onclick="sortTable('date')">Date / Period</th><th onclick="sortTable('month')">Month</th>
         <th class="num" onclick="sortTable('hours')">Hours</th><th class="num" onclick="sortTable('billRate')">Bill $/hr</th>
         <th class="num" onclick="sortTable('costRate')">Cost $/hr</th><th class="num" onclick="sortTable('revenue')">Revenue</th>
         <th class="num" onclick="sortTable('cost')">Cost</th><th class="num" onclick="sortTable('profit')">Profit</th>
-        <th onclick="sortTable('status')">Status</th>
+        <th onclick="sortTable('type')">Type</th>
       </tr></thead>
       <tbody id="dtBody"></tbody><tfoot id="dtFoot"></tfoot>
     </table></div>
@@ -323,84 +369,279 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <script>
-// ── DATA ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// RATE CARDS
+// ══════════════════════════════════════════════════════════════════
 let RATES = {
-  "Lalitha Guggilam":   {bill:39.20,  cost:27.10, project:"BOBJ"},
-  "Naveena Palakala":   {bill:107.80, cost:83.72, project:"SAP OTC Consulting"},
-  "Priyatham Kommineni":{bill:51.94,  cost:46.23, project:"Data Engineering"}
+  // VNDLY
+  "Lalitha Guggilam":   {bill:39.20,  cost:27.10, clientProject:"VNDLY-Contingency Labour"},
+  "Naveena Palakala":   {bill:107.80, cost:83.72, clientProject:"VNDLY-Contingency Labour"},
+  "Priyatham Kommineni":{bill:51.94,  cost:46.23, clientProject:"VNDLY-Contingency Labour"},
+  // GDF
+  "Aadinath Mutadak":         {bill:0,    cost:3,     clientProject:"VFC-GDF 2.0"},
+  "Aarti Wagh":               {bill:0,    cost:3,     clientProject:"VFC-GDF 2.0"},
+  "Abirami Shivaraman":       {bill:0,    cost:22,    clientProject:"VFC-GDF 2.0"},
+  "Aditya Koneru":            {bill:165,  cost:115,   clientProject:"VFC-GDF 2.0"},
+  "Arvind Kumar":             {bill:0,    cost:3,     clientProject:"VFC-GDF 2.0"},
+  "Barani Kandasamy":         {bill:135,  cost:123,   clientProject:"VFC-GDF 2.0"},
+  "Bhavani Jothisundar":      {bill:0,    cost:20,    clientProject:"VFC-GDF 2.0"},
+  "Biswamber Swain":          {bill:45,   cost:21.95, clientProject:"VFC-GDF 2.0"},
+  "Dhirendra Sahoo":          {bill:55,   cost:19.94, clientProject:"VFC-GDF 2.0"},
+  "Gopikrishnan Ramjibabu":   {bill:0,    cost:3,     clientProject:"VFC-GDF 2.0"},
+  "Govardhan Sanugula":       {bill:155,  cost:115,   clientProject:"VFC-GDF 2.0"},
+  "Jithendrakumar Sasikumar": {bill:0,    cost:3,     clientProject:"VFC-GDF 2.0"},
+  "Muthaheer Ahmed":          {bill:50,   cost:28.33, clientProject:"VFC-GDF 2.0"},
+  "Nageshwar Rao":            {bill:105,  cost:80,    clientProject:"VFC-GDF 2.0"},
+  "Navaz Rajabali":           {bill:165,  cost:94,    clientProject:"VFC-GDF 2.0"},
+  "Nitin Pangasa":            {bill:155,  cost:120,   clientProject:"VFC-GDF 2.0"},
+  "Phanindra Hebbani-Gururajachar":{bill:150,cost:110,clientProject:"VFC-GDF 2.0"},
+  "Richard Chlebek":          {bill:165,  cost:135,   clientProject:"VFC-GDF 2.0", rateChange:{date:"2026-02-01",bill:145}},
+  "Ritesh Bansal":            {bill:0,    cost:25.91, clientProject:"VFC-GDF 2.0"},
+  "Ramesh Goud":              {bill:45,   cost:22,    clientProject:"VFC-GDF 2.0"},
+  "Sabapathippilai Thipakar": {bill:45,   cost:22,    clientProject:"VFC-GDF 2.0"},
+  "Scott Chisholm":           {bill:165,  cost:150,   clientProject:"VFC-GDF 2.0"},
+  "Sharad Devganiya":         {bill:145,  cost:72,    clientProject:"VFC-GDF 2.0"},
+  "Shashidhar Dhendhi":       {bill:145,  cost:105,   clientProject:"VFC-GDF 2.0"},
+  "Sivaram Mandepudi":        {bill:55,   cost:24,    clientProject:"VFC-GDF 2.0"},
+  "Sunitha Jampana":          {bill:145,  cost:90,    clientProject:"VFC-GDF 2.0"},
+  "Surendar Vanga":           {bill:55,   cost:25,    clientProject:"VFC-GDF 2.0"}
 };
-const SEED = [
-  {name:"Lalitha Guggilam",start:"2026-02-22",end:"2026-02-28",hours:3,status:"Submitted",month:"Feb 2026"},
-  {name:"Lalitha Guggilam",start:"2026-03-01",end:"2026-03-07",hours:35,status:"Submitted",month:"Mar 2026"},
-  {name:"Lalitha Guggilam",start:"2026-03-08",end:"2026-03-14",hours:38,status:"Submitted",month:"Mar 2026"},
-  {name:"Lalitha Guggilam",start:"2026-03-15",end:"2026-03-21",hours:32,status:"Submitted",month:"Mar 2026"},
-  {name:"Lalitha Guggilam",start:"2026-03-22",end:"2026-03-28",hours:32,status:"Submitted",month:"Mar 2026"},
-  {name:"Lalitha Guggilam",start:"2026-03-29",end:"2026-04-04",hours:37,status:"Submitted",month:"Apr 2026"},
-  {name:"Lalitha Guggilam",start:"2026-04-05",end:"2026-04-11",hours:38,status:"Submitted",month:"Apr 2026"},
-  {name:"Lalitha Guggilam",start:"2026-04-12",end:"2026-04-18",hours:36,status:"Submitted",month:"Apr 2026"},
-  {name:"Lalitha Guggilam",start:"2026-04-19",end:"2026-04-25",hours:37,status:"Submitted",month:"Apr 2026"},
-  {name:"Lalitha Guggilam",start:"2026-04-26",end:"2026-05-02",hours:24,status:"Submitted",month:"May 2026"},
-  {name:"Lalitha Guggilam",start:"2026-05-03",end:"2026-05-09",hours:40,status:"Submitted",month:"May 2026"},
-  {name:"Priyatham Kommineni",start:"2026-05-03",end:"2026-05-09",hours:40,status:"Approved",month:"May 2026"},
-  {name:"Lalitha Guggilam",start:"2026-05-10",end:"2026-05-16",hours:36,status:"Submitted",month:"May 2026"},
-  {name:"Priyatham Kommineni",start:"2026-05-10",end:"2026-05-16",hours:40,status:"Approved",month:"May 2026"},
-  {name:"Naveena Palakala",start:"2026-05-10",end:"2026-05-16",hours:24,status:"Approved",month:"May 2026"},
-  {name:"Lalitha Guggilam",start:"2026-05-17",end:"2026-05-23",hours:40,status:"Submitted",month:"May 2026"},
-  {name:"Priyatham Kommineni",start:"2026-05-17",end:"2026-05-23",hours:40,status:"Approved",month:"May 2026"},
-  {name:"Naveena Palakala",start:"2026-05-17",end:"2026-05-23",hours:0,status:"Approved",month:"May 2026"},
-  {name:"Lalitha Guggilam",start:"2026-05-24",end:"2026-05-30",hours:32,status:"Submitted",month:"May 2026"},
-  {name:"Priyatham Kommineni",start:"2026-05-24",end:"2026-05-30",hours:32,status:"Approved",month:"May 2026"},
-  {name:"Naveena Palakala",start:"2026-05-24",end:"2026-05-30",hours:32,status:"Approved",month:"May 2026"},
-  {name:"Priyatham Kommineni",start:"2026-05-31",end:"2026-06-06",hours:40,status:"Approved",month:"Jun 2026"},
-  {name:"Naveena Palakala",start:"2026-05-31",end:"2026-06-06",hours:40,status:"Approved",month:"Jun 2026"}
-];
-let DATA=[];
-function buildRow(r){
-  const rc=RATES[r.name]||{bill:0,cost:0,project:"Unassigned"};
-  return{...r,billRate:rc.bill,costRate:rc.cost,project:rc.project,
-    revenue:+(r.hours*rc.bill).toFixed(2),cost:+(r.hours*rc.cost).toFixed(2),
-    profit:+(r.hours*(rc.bill-rc.cost)).toFixed(2)};
-}
-function rebuildData(raw){DATA=raw.map(buildRow);}
-rebuildData(SEED);
 
-// ── UTILS ─────────────────────────────────────────────────────────
-const PAL=['#1A56DB','#0891B2','#059669','#D97706','#7C3AED','#DC2626','#0284C7','#16A34A'];
-const avm={};let avi=0;
+// ══════════════════════════════════════════════════════════════════
+// SEED DATA (VNDLY)
+// ══════════════════════════════════════════════════════════════════
+const VNDLY_SEED = [
+  {name:"Lalitha Guggilam",date:"2026-02-22",month:"Feb 2026",hours:3,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-03-01",month:"Mar 2026",hours:35,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-03-08",month:"Mar 2026",hours:38,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-03-15",month:"Mar 2026",hours:32,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-03-22",month:"Mar 2026",hours:32,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-03-29",month:"Apr 2026",hours:37,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-04-05",month:"Apr 2026",hours:38,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-04-12",month:"Apr 2026",hours:36,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-04-19",month:"Apr 2026",hours:37,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-04-26",month:"May 2026",hours:24,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-05-03",month:"May 2026",hours:40,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Priyatham Kommineni",date:"2026-05-03",month:"May 2026",hours:40,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-05-10",month:"May 2026",hours:36,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Priyatham Kommineni",date:"2026-05-10",month:"May 2026",hours:40,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Naveena Palakala",date:"2026-05-10",month:"May 2026",hours:24,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-05-17",month:"May 2026",hours:40,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Priyatham Kommineni",date:"2026-05-17",month:"May 2026",hours:40,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Naveena Palakala",date:"2026-05-17",month:"May 2026",hours:0,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Lalitha Guggilam",date:"2026-05-24",month:"May 2026",hours:32,status:"Submitted",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Priyatham Kommineni",date:"2026-05-24",month:"May 2026",hours:32,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Naveena Palakala",date:"2026-05-24",month:"May 2026",hours:32,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Priyatham Kommineni",date:"2026-05-31",month:"Jun 2026",hours:40,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""},
+  {name:"Naveena Palakala",date:"2026-05-31",month:"Jun 2026",hours:40,status:"Approved",clientProject:"VNDLY-Contingency Labour",jobName:""}
+];
+
+let RAW = [...VNDLY_SEED];
+let DATA = [];
+let projectFilter = 'all';
+let rcFilter = 'all';
+let monthlyView = 'contractor';
+let sortKey = 'date', sortAsc = true;
+let uploadType = 'vndly';
+
+// ══════════════════════════════════════════════════════════════════
+// BUILD ROW — apply rates, handle rate change dates, flag non-billable
+// ══════════════════════════════════════════════════════════════════
+function getBillRate(name, dateStr) {
+  const rc = RATES[name];
+  if (!rc) return 0;
+  if (rc.rateChange && dateStr >= rc.rateChange.date) return rc.rateChange.bill;
+  return rc.bill;
+}
+function buildRow(r) {
+  const rc = RATES[r.name] || {bill:0, cost:0, clientProject:"Unknown"};
+  const bill = getBillRate(r.name, r.date);
+  const cost = rc.cost;
+  const nonBillable = bill === 0 && cost > 0;
+  return {
+    ...r,
+    billRate: bill, costRate: cost,
+    clientProject: r.clientProject || rc.clientProject || "Unknown",
+    revenue: +(r.hours * bill).toFixed(2),
+    cost: +(r.hours * cost).toFixed(2),
+    profit: +(r.hours * (bill - cost)).toFixed(2),
+    nonBillable, type: nonBillable ? 'Non-billable' : 'Billable'
+  };
+}
+function rebuildData() { DATA = RAW.map(buildRow); }
+rebuildData();
+
+// ══════════════════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════════════════
+const PAL = ['#1A56DB','#0891B2','#059669','#D97706','#7C3AED','#DC2626','#0284C7','#16A34A','#BE185D','#B45309','#0E7490','#4338CA'];
+const avm = {}; let avi = 0;
 function ac(n){if(!avm[n])avm[n]=PAL[avi++%PAL.length];return avm[n];}
 function ini(n){return n.split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();}
 function fmtC(v){return'$'+Number(v).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function fmtN(v){return Number(v).toLocaleString('en-CA');}
-function fmtD(s){return new Date(s+'T00:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});}
+function fmtD(s){if(!s)return'—';try{return new Date(s+'T00:00:00').toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric'});}catch{return s;}}
 function marginColor(m){return m>=30?'var(--green)':m>=15?'var(--amber)':'var(--red)';}
 function fmtDelta(v,isMoney=true){
   if(v===null||v===undefined)return'<span class="var-neu">—</span>';
   const s=isMoney?fmtC(Math.abs(v)):Math.abs(v).toFixed(0);
   return`<span class="${v>0?'var-pos':v<0?'var-neg':'var-neu'}">${v>0?'▲':'▼'} ${s}</span>`;
 }
-function fmtDeltaPP(v){
-  if(v===null||v===undefined)return'<span class="var-neu">—</span>';
-  return`<span class="${v>0?'var-pos':v<0?'var-neg':'var-neu'}">${v>0?'▲':'▼'} ${Math.abs(v).toFixed(1)}pp</span>`;
-}
+function fmtDeltaPP(v){if(v===null||v===undefined)return'<span class="var-neu">—</span>';return`<span class="${v>0?'var-pos':v<0?'var-neg':'var-neu'}">${v>0?'▲':'▼'} ${Math.abs(v).toFixed(1)}pp</span>`;}
 const charts={};
-function mkChart(id,cfg){if(charts[id])charts[id].destroy();charts[id]=new Chart(document.getElementById(id),cfg);}
+function mkChart(id,cfg){if(charts[id])charts[id].destroy();const el=document.getElementById(id);if(!el)return;charts[id]=new Chart(el,cfg);}
 const gridColor='rgba(148,163,184,0.15)';
 const tickFont={size:10,family:'-apple-system,sans-serif'};
 const dollar=v=>'$'+Number(v).toLocaleString();
 
-// ── TAB SWITCHING ─────────────────────────────────────────────────
+function getMonths(rows){return[...new Set(rows.map(r=>r.month))];}
+
+// ══════════════════════════════════════════════════════════════════
+// FILTERED DATA
+// ══════════════════════════════════════════════════════════════════
+function getByProject(proj){return proj==='all'?DATA:DATA.filter(r=>r.clientProject===proj);}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ══════════════════════════════════════════════════════════════════
 function switchTab(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('tab-'+id).classList.add('active');
   document.querySelector(`.nav-tab[data-tab="${id}"]`).classList.add('active');
 }
-document.querySelectorAll('.nav-tab').forEach(t=>{
-  t.addEventListener('click',()=>switchTab(t.dataset.tab));
-});
+document.querySelectorAll('.nav-tab').forEach(t=>t.addEventListener('click',()=>switchTab(t.dataset.tab)));
 
-// ── MONTHLY VIEW TOGGLE ───────────────────────────────────────────
-let monthlyView='contractor';
+// ══════════════════════════════════════════════════════════════════
+// PROJECT FILTER (client bar pills)
+// ══════════════════════════════════════════════════════════════════
+function setProjectFilter(p){
+  projectFilter=p;
+  ['all','vndly','gdf'].forEach(k=>document.getElementById('pill-'+k).classList.remove('active'));
+  const map={'all':'all','VNDLY-Contingency Labour':'vndly','VFC-GDF 2.0':'gdf'};
+  document.getElementById('pill-'+map[p]).classList.add('active');
+  renderAll();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CLIENT BAR STATS
+// ══════════════════════════════════════════════════════════════════
+function updateClientBar(){
+  const rows=getByProject(projectFilter);
+  const rev=rows.reduce((a,r)=>a+r.revenue,0);
+  const profit=rows.reduce((a,r)=>a+r.profit,0);
+  const hrs=rows.reduce((a,r)=>a+r.hours,0);
+  const margin=rev?((profit/rev)*100).toFixed(1):0;
+  document.getElementById('cs-rev').textContent=fmtC(rev);
+  document.getElementById('cs-profit').textContent=fmtC(profit);
+  document.getElementById('cs-margin').textContent=margin+'%';
+  document.getElementById('cs-hours').textContent=fmtN(hrs);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// OVERVIEW
+// ══════════════════════════════════════════════════════════════════
+function renderOverview(){
+  const rows=getByProject(projectFilter);
+  const totRev=rows.reduce((a,r)=>a+r.revenue,0);
+  const totCost=rows.reduce((a,r)=>a+r.cost,0);
+  const totProfit=rows.reduce((a,r)=>a+r.profit,0);
+  const totHrs=rows.reduce((a,r)=>a+r.hours,0);
+  const nbCost=rows.filter(r=>r.nonBillable).reduce((a,r)=>a+r.cost,0);
+  const margin=totRev?((totProfit/totRev)*100).toFixed(1):0;
+  const nc=[...new Set(rows.map(r=>r.name))].length;
+  document.getElementById('kpis-ov').innerHTML=`
+    <div class="kpi k1"><div class="kpi-label">Total revenue</div><div class="kpi-value">${fmtC(totRev)}</div><div class="kpi-sub">${nc} contractors · ${[...new Set(rows.map(r=>r.clientProject))].length} projects</div></div>
+    <div class="kpi k2"><div class="kpi-label">Gross profit</div><div class="kpi-value">${fmtC(totProfit)}</div><div class="kpi-sub">Margin ${margin}%</div></div>
+    <div class="kpi k3"><div class="kpi-label">Total cost</div><div class="kpi-value">${fmtC(totCost)}</div><div class="kpi-sub">Non-bill cost: ${fmtC(nbCost)}</div></div>
+    <div class="kpi k4"><div class="kpi-label">Billable hours</div><div class="kpi-value">${fmtN(totHrs)}</div><div class="kpi-sub">${getMonths(rows).length} months</div></div>
+    <div class="kpi k5"><div class="kpi-label">Avg spread</div><div class="kpi-value">${totHrs?'$'+(totProfit/totHrs).toFixed(2):'—'}</div><div class="kpi-sub">per hour (incl. non-bill)</div></div>`;
+  document.getElementById('rev-badge').textContent=fmtC(totRev);
+  const byN={},byM={},byCP={};
+  rows.forEach(r=>{byN[r.name]=(byN[r.name]||0)+r.revenue;byM[r.month]=(byM[r.month]||0)+r.revenue;byCP[r.clientProject]=(byCP[r.clientProject]||0)+r.hours;});
+  mkChart('cRevContractor',{type:'bar',data:{labels:Object.keys(byN),datasets:[{data:Object.values(byN).map(v=>+v.toFixed(2)),backgroundColor:Object.keys(byN).map(k=>ac(k)),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,maxRotation:20},grid:{display:false}}}}});
+  mkChart('cRevMonth',{type:'bar',data:{labels:Object.keys(byM),datasets:[{data:Object.values(byM).map(v=>+v.toFixed(2)),backgroundColor:'#1A56DB',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+  mkChart('cHours',{type:'doughnut',data:{labels:Object.keys(byCP),datasets:[{data:Object.values(byCP),backgroundColor:['#1A56DB','#7C3AED'],borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:tickFont,padding:10,boxWidth:10,boxHeight:10}}}}});
+  const months=Object.keys(byM);
+  const rev=months.map(m=>+(rows.filter(r=>r.month===m).reduce((a,r)=>a+r.revenue,0)).toFixed(2));
+  const cost=months.map(m=>+(rows.filter(r=>r.month===m).reduce((a,r)=>a+r.cost,0)).toFixed(2));
+  const profit=months.map((m,i)=>+(rev[i]-cost[i]).toFixed(2));
+  mkChart('cRvC',{type:'bar',data:{labels:months,datasets:[{label:'Revenue',data:rev,backgroundColor:'rgba(26,86,219,0.7)',borderRadius:3,borderSkipped:false},{label:'Cost',data:cost,backgroundColor:'rgba(220,38,38,0.5)',borderRadius:3,borderSkipped:false},{label:'Profit',data:profit,backgroundColor:'rgba(5,150,105,0.8)',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:tickFont,padding:8,boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+  const margins=months.map((m,i)=>rev[i]?+((profit[i]/rev[i])*100).toFixed(1):0);
+  mkChart('cMarginLine',{type:'line',data:{labels:months,datasets:[{label:'Margin %',data:margins,borderColor:'#059669',backgroundColor:'rgba(5,150,105,0.08)',tension:.3,fill:true,pointRadius:4,pointBackgroundColor:'#059669'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.raw+'%'}}},scales:{y:{ticks:{callback:v=>v+'%',font:tickFont},grid:{color:gridColor},min:0},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROJECT COMPARE
+// ══════════════════════════════════════════════════════════════════
+function renderCompare(){
+  const projs=['VNDLY-Contingency Labour','VFC-GDF 2.0'];
+  const pdata=projs.map(p=>{
+    const rows=DATA.filter(r=>r.clientProject===p);
+    const rev=rows.reduce((a,r)=>a+r.revenue,0);
+    const cost=rows.reduce((a,r)=>a+r.cost,0);
+    const profit=rows.reduce((a,r)=>a+r.profit,0);
+    const hrs=rows.reduce((a,r)=>a+r.hours,0);
+    const nbCost=rows.filter(r=>r.nonBillable).reduce((a,r)=>a+r.cost,0);
+    const margin=rev?((profit/rev)*100).toFixed(1):0;
+    return{p,rev,cost,profit,hrs,nbCost,margin,nc:[...new Set(rows.map(r=>r.name))].length};
+  });
+  const cls=['vndly','gdf'];
+  document.getElementById('projCompareCards').innerHTML=pdata.map((d,i)=>`
+    <div class="pcomp ${cls[i]}">
+      <div class="pcomp-title">${d.p}</div>
+      <div class="pcomp-row"><span class="pcomp-lbl">Revenue</span><span class="pcomp-val" style="color:var(--blue)">${fmtC(d.rev)}</span></div>
+      <div class="pcomp-row"><span class="pcomp-lbl">Total cost</span><span class="pcomp-val" style="color:var(--red)">${fmtC(d.cost)}</span></div>
+      <div class="pcomp-row"><span class="pcomp-lbl">Non-billable cost</span><span class="pcomp-val" style="color:var(--amber)">${fmtC(d.nbCost)}</span></div>
+      <div class="pcomp-row"><span class="pcomp-lbl">Gross profit</span><span class="pcomp-val" style="color:${d.profit>=0?'var(--green)':'var(--red)'}">${fmtC(d.profit)}</span></div>
+      <div class="pcomp-row"><span class="pcomp-lbl">Gross margin</span><span class="pcomp-val" style="color:${marginColor(parseFloat(d.margin))}">${d.margin}%</span></div>
+      <div class="pcomp-row"><span class="pcomp-lbl">Total hours</span><span class="pcomp-val">${fmtN(d.hrs)}</span></div>
+      <div class="pcomp-row"><span class="pcomp-lbl">Contractors</span><span class="pcomp-val">${d.nc}</span></div>
+    </div>`).join('');
+  const months=[...new Set(DATA.map(r=>r.month))];
+  const revDS=projs.map((p,i)=>({label:p,data:months.map(m=>+(DATA.filter(r=>r.clientProject===p&&r.month===m).reduce((a,r)=>a+r.revenue,0)).toFixed(2)),borderColor:['#1A56DB','#7C3AED'][i],backgroundColor:['rgba(26,86,219,.1)','rgba(124,58,237,.1)'][i],tension:.3,fill:true,pointRadius:3}));
+  mkChart('cCompRev',{type:'line',data:{labels:months,datasets:revDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:tickFont,padding:8,boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+  const marginDS=projs.map((p,i)=>({label:p,data:months.map(m=>{const r=DATA.filter(d=>d.clientProject===p&&d.month===m);const rev=r.reduce((a,d)=>a+d.revenue,0);const profit=r.reduce((a,d)=>a+d.profit,0);return rev?+((profit/rev)*100).toFixed(1):null;}),borderColor:['#1A56DB','#7C3AED'][i],backgroundColor:'transparent',tension:.3,pointRadius:4,spanGaps:true}));
+  mkChart('cCompMargin',{type:'line',data:{labels:months,datasets:marginDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:tickFont,padding:8,boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+(c.raw!==null?c.raw+'%':'—')}}},scales:{y:{ticks:{callback:v=>v+'%',font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+  const hrsDS=projs.map((p,i)=>({label:p,data:months.map(m=>DATA.filter(r=>r.clientProject===p&&r.month===m).reduce((a,r)=>a+r.hours,0)),backgroundColor:['rgba(26,86,219,.7)','rgba(124,58,237,.7)'][i],borderRadius:3,borderSkipped:false}));
+  mkChart('cCompHours',{type:'bar',data:{labels:months,datasets:hrsDS},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:tickFont,padding:8,boxWidth:10,boxHeight:10}}},scales:{y:{ticks:{font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+  const nbMonths=[...new Set(DATA.filter(r=>r.nonBillable).map(r=>r.month))];
+  const nbCostByM=nbMonths.map(m=>+(DATA.filter(r=>r.nonBillable&&r.month===m).reduce((a,r)=>a+r.cost,0)).toFixed(2));
+  mkChart('cNonBill',{type:'bar',data:{labels:nbMonths,datasets:[{label:'Non-bill cost',data:nbCostByM,backgroundColor:'rgba(217,119,6,.7)',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+}
+
+// ══════════════════════════════════════════════════════════════════
+// PROFITABILITY
+// ══════════════════════════════════════════════════════════════════
+function renderProfitability(){
+  const rows=getByProject(projectFilter);
+  const contractors=[...new Set(rows.map(r=>r.name))];
+  const projs=[...new Set(rows.map(r=>r.clientProject))];
+  const totRev=rows.reduce((a,r)=>a+r.revenue,0);
+  const totCost=rows.reduce((a,r)=>a+r.cost,0);
+  const totProfit=rows.reduce((a,r)=>a+r.profit,0);
+  const totHrs=rows.reduce((a,r)=>a+r.hours,0);
+  const margin=totRev?((totProfit/totRev)*100).toFixed(1):0;
+  document.getElementById('kpis-pf').innerHTML=`
+    <div class="kpi k1"><div class="kpi-label">Total revenue</div><div class="kpi-value">${fmtC(totRev)}</div><div class="kpi-sub">${fmtN(totHrs)} hrs</div></div>
+    <div class="kpi k2"><div class="kpi-label">Gross profit</div><div class="kpi-value">${fmtC(totProfit)}</div><div class="kpi-sub">Margin ${margin}%</div></div>
+    <div class="kpi k3"><div class="kpi-label">Total cost</div><div class="kpi-value">${fmtC(totCost)}</div><div class="kpi-sub">All contractors</div></div>
+    <div class="kpi k4"><div class="kpi-label">Billable contractors</div><div class="kpi-value">${contractors.filter(n=>(RATES[n]?.bill||0)>0).length}</div><div class="kpi-sub">of ${contractors.length} total</div></div>
+    <div class="kpi k5"><div class="kpi-label">Non-bill cost</div><div class="kpi-value">${fmtC(rows.filter(r=>r.nonBillable).reduce((a,r)=>a+r.cost,0))}</div><div class="kpi-sub">reduces margin</div></div>`;
+  const cRows=contractors.map(n=>{const r=rows.filter(x=>x.name===n);const rev=r.reduce((a,x)=>a+x.revenue,0);const cost=r.reduce((a,x)=>a+x.cost,0);const profit=r.reduce((a,x)=>a+x.profit,0);const m=rev?((profit/rev)*100):0;const cp=r[0]?.clientProject||'';return{n,rev,cost,profit,m,cp};}).sort((a,b)=>b.revenue-a.revenue);
+  const maxCRev=Math.max(...cRows.map(r=>r.rev),1);
+  document.getElementById('tblContractorProfit').innerHTML=cRows.map((r,i)=>`<tr class="${i%2===1?'even':''}"><td><span class="avatar" style="background:${ac(r.n)}">${ini(r.n)}</span>${r.n}</td><td><span class="badge ${r.cp.includes('GDF')?'bgdf':'bvndly'}">${r.cp.includes('GDF')?'GDF':'VNDLY'}</span></td><td class="num">${fmtC(r.rev)}<div class="profit-bar"><div class="profit-fill" style="width:${(r.rev/maxCRev*100).toFixed(1)}%;background:${ac(r.n)}"></div></div></td><td class="num">${fmtC(r.cost)}</td><td class="num" style="font-weight:600;color:${r.profit>=0?'var(--green)':'var(--red)'}">${fmtC(r.profit)}</td><td class="num"><span style="font-weight:700;color:${marginColor(r.m)}">${r.rev>0?r.m.toFixed(1)+'%':'NB'}</span></td></tr>`).join('');
+  document.getElementById('tblContractorProfitFoot').innerHTML=`<tr><td colspan="2">Total</td><td class="num">${fmtC(totRev)}</td><td class="num">${fmtC(totCost)}</td><td class="num">${fmtC(totProfit)}</td><td class="num">${margin}%</td></tr>`;
+  const pRows=projs.map(p=>{const r=rows.filter(x=>x.clientProject===p);const rev=r.reduce((a,x)=>a+x.revenue,0);const cost=r.reduce((a,x)=>a+x.cost,0);const profit=r.reduce((a,x)=>a+x.profit,0);const nbCost=r.filter(x=>x.nonBillable).reduce((a,x)=>a+x.cost,0);const m=rev?((profit/rev)*100):0;return{p,rev,cost,profit,nbCost,m};});
+  document.getElementById('tblProjectProfit').innerHTML=pRows.map((r,i)=>`<tr class="${i%2===1?'even':''}"><td><span class="badge ${r.p.includes('GDF')?'bgdf':'bvndly'}">${r.p}</span></td><td class="num">${fmtC(r.rev)}</td><td class="num">${fmtC(r.cost)}</td><td class="num" style="font-weight:600;color:${r.profit>=0?'var(--green)':'var(--red)'}">${fmtC(r.profit)}</td><td class="num"><span style="font-weight:700;color:${marginColor(r.m)}">${r.rev>0?r.m.toFixed(1)+'%':'—'}</span></td><td class="num" style="color:var(--amber)">${fmtC(r.nbCost)}</td></tr>`).join('');
+  document.getElementById('tblProjectProfitFoot').innerHTML=`<tr><td>Total</td><td class="num">${fmtC(totRev)}</td><td class="num">${fmtC(totCost)}</td><td class="num">${fmtC(totProfit)}</td><td class="num">${margin}%</td><td class="num">${fmtC(rows.filter(r=>r.nonBillable).reduce((a,r)=>a+r.cost,0))}</td></tr>`;
+  mkChart('cContractorMargin',{type:'bar',data:{labels:cRows.filter(r=>r.rev>0).map(r=>r.n),datasets:[{data:cRows.filter(r=>r.rev>0).map(r=>+r.m.toFixed(1)),backgroundColor:cRows.filter(r=>r.rev>0).map(r=>ac(r.n)),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.raw+'%'}}},scales:{y:{ticks:{callback:v=>v+'%',font:tickFont},grid:{color:gridColor},min:0},x:{ticks:{font:tickFont,maxRotation:20},grid:{display:false}}}}});
+  mkChart('cProjectBar',{type:'bar',data:{labels:pRows.map(r=>r.p),datasets:[{label:'Revenue',data:pRows.map(r=>+r.rev.toFixed(2)),backgroundColor:'rgba(26,86,219,.7)',borderRadius:3,borderSkipped:false},{label:'Profit',data:pRows.map(r=>+r.profit.toFixed(2)),backgroundColor:'rgba(5,150,105,.8)',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:tickFont,padding:8,boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,maxRotation:10},grid:{display:false}}}}});
+}
+
+// ══════════════════════════════════════════════════════════════════
+// MONTHLY P&L PIVOT
+// ══════════════════════════════════════════════════════════════════
 function setMonthlyView(v){
   monthlyView=v;
   document.getElementById('sec-contractor').style.display=v==='contractor'?'block':'none';
@@ -408,109 +649,9 @@ function setMonthlyView(v){
   document.getElementById('tbtn-contractor').className='tbtn'+(v==='contractor'?' active':'');
   document.getElementById('tbtn-project').className='tbtn'+(v==='project'?' active':'');
 }
-
-// ── SORT / FILTER ─────────────────────────────────────────────────
-let sortKey='start',sortAsc=true;
-function getFiltered(){
-  const n=document.getElementById('fName').value;
-  const m=document.getElementById('fMonth').value;
-  const p=document.getElementById('fProj').value;
-  const s=document.getElementById('fStatus').value;
-  let rows=DATA.filter(d=>(!n||d.name===n)&&(!m||d.month===m)&&(!p||d.project===p)&&(!s||d.status===s));
-  return[...rows].sort((a,b)=>{
-    let av=a[sortKey],bv=b[sortKey];
-    if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}
-    return sortAsc?(av>bv?1:-1):(av<bv?1:-1);
-  });
-}
-function sortTable(k){
-  if(sortKey===k)sortAsc=!sortAsc;else{sortKey=k;sortAsc=true;}
-  document.querySelectorAll('#dtTable thead th').forEach(t=>t.classList.remove('sa','sd'));
-  const keys=['name','project','start','end','month','hours','billRate','costRate','revenue','cost','profit','status'];
-  const i=keys.indexOf(k);
-  if(i>=0)document.querySelectorAll('#dtTable thead th')[i].classList.add(sortAsc?'sa':'sd');
-  renderDetail();
-}
-function populateFilters(){
-  const names=[...new Set(DATA.map(d=>d.name))].sort();
-  const months=[...new Set(DATA.map(d=>d.month))];
-  const projs=[...new Set(DATA.map(d=>d.project))].sort();
-  const sel=(id,opts,pfx)=>{
-    const el=document.getElementById(id),cur=el.value;
-    el.innerHTML=`<option value="">${pfx}</option>`+opts.map(o=>`<option${o===cur?' selected':''}>${o}</option>`).join('');
-  };
-  sel('fName',names,'All contractors');
-  sel('fMonth',months,'All months');
-  sel('fProj',projs,'All projects');
-}
-function resetFilters(){['fName','fMonth','fProj','fStatus'].forEach(id=>document.getElementById(id).value='');renderAll();}
-
-// ── OVERVIEW ──────────────────────────────────────────────────────
-function renderOverview(){
-  const rows=DATA;
-  const totRev=rows.reduce((a,r)=>a+r.revenue,0);
-  const totCost=rows.reduce((a,r)=>a+r.cost,0);
-  const totProfit=rows.reduce((a,r)=>a+r.profit,0);
-  const totHrs=rows.reduce((a,r)=>a+r.hours,0);
-  const margin=totRev?((totProfit/totRev)*100).toFixed(1):0;
-  const nc=[...new Set(rows.map(r=>r.name))].length;
-  document.getElementById('kpis-ov').innerHTML=`
-    <div class="kpi k1"><div class="kpi-label">Total revenue</div><div class="kpi-value">${fmtC(totRev)}</div><div class="kpi-sub">${rows.length} timesheets · ${nc} contractors</div></div>
-    <div class="kpi k2"><div class="kpi-label">Gross profit</div><div class="kpi-value">${fmtC(totProfit)}</div><div class="kpi-sub">Margin ${margin}%</div></div>
-    <div class="kpi k3"><div class="kpi-label">Total cost</div><div class="kpi-value">${fmtC(totCost)}</div><div class="kpi-sub">Contractor cost basis</div></div>
-    <div class="kpi k4"><div class="kpi-label">Billable hours</div><div class="kpi-value">${fmtN(totHrs)}</div><div class="kpi-sub">${[...new Set(rows.map(r=>r.month))].length} months</div></div>
-    <div class="kpi k5"><div class="kpi-label">Avg spread</div><div class="kpi-value">${totHrs?'$'+(totProfit/totHrs).toFixed(2):'—'}</div><div class="kpi-sub">per billable hour</div></div>`;
-  const byN={},byM={},byNH={};
-  rows.forEach(r=>{byN[r.name]=(byN[r.name]||0)+r.revenue;byM[r.month]=(byM[r.month]||0)+r.revenue;byNH[r.name]=(byNH[r.name]||0)+r.hours;});
-  document.getElementById('rev-badge').textContent=fmtC(Object.values(byN).reduce((a,v)=>a+v,0));
-  mkChart('cRevContractor',{type:'bar',data:{labels:Object.keys(byN),datasets:[{data:Object.values(byN).map(v=>+v.toFixed(2)),backgroundColor:Object.keys(byN).map((_,i)=>PAL[i%PAL.length]),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,maxRotation:15},grid:{display:false}}}}});
-  mkChart('cRevMonth',{type:'bar',data:{labels:Object.keys(byM),datasets:[{data:Object.values(byM).map(v=>+v.toFixed(2)),backgroundColor:'#1A56DB',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
-  mkChart('cHours',{type:'doughnut',data:{labels:Object.keys(byNH),datasets:[{data:Object.values(byNH),backgroundColor:Object.keys(byNH).map((_,i)=>PAL[i%PAL.length]),borderWidth:2,borderColor:'#fff'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{font:tickFont,padding:10,boxWidth:10,boxHeight:10}}}}});
-  const months=Object.keys(byM);
-  const rev=months.map(m=>+(rows.filter(r=>r.month===m).reduce((a,r)=>a+r.revenue,0)).toFixed(2));
-  const cost=months.map(m=>+(rows.filter(r=>r.month===m).reduce((a,r)=>a+r.cost,0)).toFixed(2));
-  const profit=months.map((m,i)=>+(rev[i]-cost[i]).toFixed(2));
-  mkChart('cRvC',{type:'bar',data:{labels:months,datasets:[{label:'Revenue',data:rev,backgroundColor:'rgba(26,86,219,0.7)',borderRadius:3,borderSkipped:false},{label:'Cost',data:cost,backgroundColor:'rgba(220,38,38,0.5)',borderRadius:3,borderSkipped:false},{label:'Profit',data:profit,backgroundColor:'rgba(5,150,105,0.8)',borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:tickFont,padding:10,boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtC(c.raw)}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
-  const margins=months.map((m,i)=>rev[i]?+((profit[i]/rev[i])*100).toFixed(1):0);
-  mkChart('cMarginLine',{type:'line',data:{labels:months,datasets:[{label:'Margin %',data:margins,borderColor:'#059669',backgroundColor:'rgba(5,150,105,0.08)',tension:.3,fill:true,pointRadius:4,pointBackgroundColor:'#059669'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.raw+'%'}}},scales:{y:{ticks:{callback:v=>v+'%',font:tickFont},grid:{color:gridColor},min:0},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
-}
-
-// ── PROFITABILITY ─────────────────────────────────────────────────
-function renderProfitability(){
-  const rows=DATA;
-  const contractors=[...new Set(rows.map(r=>r.name))];
-  const projects=[...new Set(rows.map(r=>r.project))];
-  const totRev=rows.reduce((a,r)=>a+r.revenue,0);
-  const totCost=rows.reduce((a,r)=>a+r.cost,0);
-  const totProfit=rows.reduce((a,r)=>a+r.profit,0);
-  const totHrs=rows.reduce((a,r)=>a+r.hours,0);
-  const margin=totRev?((totProfit/totRev)*100).toFixed(1):0;
-  const topCon=contractors.sort((a,b)=>rows.filter(r=>r.name===b).reduce((s,r)=>s+r.profit,0)-rows.filter(r=>r.name===a).reduce((s,r)=>s+r.profit,0))[0]||'—';
-  const topProj=projects.sort((a,b)=>rows.filter(r=>r.project===b).reduce((s,r)=>s+r.profit,0)-rows.filter(r=>r.project===a).reduce((s,r)=>s+r.profit,0))[0]||'—';
-  document.getElementById('kpis-pf').innerHTML=`
-    <div class="kpi k1"><div class="kpi-label">Total revenue</div><div class="kpi-value">${fmtC(totRev)}</div><div class="kpi-sub">${fmtN(totHrs)} hrs</div></div>
-    <div class="kpi k2"><div class="kpi-label">Gross profit</div><div class="kpi-value">${fmtC(totProfit)}</div><div class="kpi-sub">Margin ${margin}%</div></div>
-    <div class="kpi k3"><div class="kpi-label">Total cost</div><div class="kpi-value">${fmtC(totCost)}</div><div class="kpi-sub">Contractor cost basis</div></div>
-    <div class="kpi k4"><div class="kpi-label">Top contractor</div><div class="kpi-value" style="font-size:14px">${topCon.split(' ')[0]}</div><div class="kpi-sub">by gross profit</div></div>
-    <div class="kpi k5"><div class="kpi-label">Top project</div><div class="kpi-value" style="font-size:12px">${topProj}</div><div class="kpi-sub">by gross profit</div></div>`;
-  const cRows=contractors.map(n=>{const r=rows.filter(x=>x.name===n);const rev=r.reduce((a,x)=>a+x.revenue,0);const cost=r.reduce((a,x)=>a+x.cost,0);const profit=r.reduce((a,x)=>a+x.profit,0);const m=rev?((profit/rev)*100):0;return{n,rev,cost,profit,m};}).sort((a,b)=>b.profit-a.profit);
-  const maxCRev=Math.max(...cRows.map(r=>r.rev),1);
-  document.getElementById('tblContractorProfit').innerHTML=cRows.map((r,i)=>`<tr class="${i%2===1?'even':''}"><td><span class="avatar" style="background:${ac(r.n)}">${ini(r.n)}</span>${r.n}</td><td class="num">${fmtC(r.rev)}<div class="profit-bar"><div class="profit-fill" style="width:${(r.rev/maxCRev*100).toFixed(1)}%;background:#1A56DB"></div></div></td><td class="num">${fmtC(r.cost)}</td><td class="num" style="font-weight:600;color:${r.profit>=0?'var(--green)':'var(--red)'}">${fmtC(r.profit)}</td><td class="num"><span style="font-weight:700;color:${marginColor(r.m)}">${r.m.toFixed(1)}%</span></td></tr>`).join('');
-  document.getElementById('tblContractorProfitFoot').innerHTML=`<tr><td>Total</td><td class="num">${fmtC(totRev)}</td><td class="num">${fmtC(totCost)}</td><td class="num">${fmtC(totProfit)}</td><td class="num">${margin}%</td></tr>`;
-  const pRows=projects.map(p=>{const r=rows.filter(x=>x.project===p);const rev=r.reduce((a,x)=>a+x.revenue,0);const cost=r.reduce((a,x)=>a+x.cost,0);const profit=r.reduce((a,x)=>a+x.profit,0);const m=rev?((profit/rev)*100):0;return{p,rev,cost,profit,m};}).sort((a,b)=>b.profit-a.profit);
-  const maxPRev=Math.max(...pRows.map(r=>r.rev),1);
-  document.getElementById('tblProjectProfit').innerHTML=pRows.map((r,i)=>`<tr class="${i%2===1?'even':''}"><td><span class="badge bp">${r.p}</span></td><td class="num">${fmtC(r.rev)}<div class="profit-bar"><div class="profit-fill" style="width:${(r.rev/maxPRev*100).toFixed(1)}%;background:#7C3AED"></div></div></td><td class="num">${fmtC(r.cost)}</td><td class="num" style="font-weight:600;color:${r.profit>=0?'var(--green)':'var(--red)'}">${fmtC(r.profit)}</td><td class="num"><span style="font-weight:700;color:${marginColor(r.m)}">${r.m.toFixed(1)}%</span></td></tr>`).join('');
-  document.getElementById('tblProjectProfitFoot').innerHTML=`<tr><td>Total</td><td class="num">${fmtC(totRev)}</td><td class="num">${fmtC(totCost)}</td><td class="num">${fmtC(totProfit)}</td><td class="num">${margin}%</td></tr>`;
-  const cMargins=cRows.map(r=>+r.m.toFixed(1));
-  mkChart('cContractorMargin',{type:'bar',data:{labels:cRows.map(r=>r.n),datasets:[{data:cMargins,backgroundColor:cRows.map(r=>ac(r.n)),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.raw+'%'}}},scales:{y:{ticks:{callback:v=>v+'%',font:tickFont},grid:{color:gridColor},min:0},x:{ticks:{font:tickFont,maxRotation:15},grid:{display:false}}}}});
-  const pMargins=pRows.map(r=>+r.m.toFixed(1));
-  mkChart('cProjectMargin',{type:'bar',data:{labels:pRows.map(r=>r.p),datasets:[{data:pMargins,backgroundColor:pRows.map((_,i)=>PAL[(i+3)%PAL.length]),borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+c.raw+'%'}}},scales:{y:{ticks:{callback:v=>v+'%',font:tickFont},grid:{color:gridColor},min:0},x:{ticks:{font:tickFont,maxRotation:15},grid:{display:false}}}}});
-}
-
-// ── MONTHLY P&L PIVOT ─────────────────────────────────────────────
 function buildPivot(dimKey,dimLabel,tblRevId,tblProfitId,tblMarginId,cRevId,cProfitId){
-  const rows=DATA;
-  const months=[...new Set(rows.map(r=>r.month))];
+  const rows=getByProject(projectFilter);
+  const months=getMonths(rows);
   const dims=[...new Set(rows.map(r=>r[dimKey]))].sort();
   const pivot={};
   dims.forEach(d=>{pivot[d]={};months.forEach(m=>{const sub=rows.filter(r=>r[dimKey]===d&&r.month===m);pivot[d][m]={rev:sub.reduce((a,r)=>a+r.revenue,0),cost:sub.reduce((a,r)=>a+r.cost,0),profit:sub.reduce((a,r)=>a+r.profit,0)};});});
@@ -518,211 +659,358 @@ function buildPivot(dimKey,dimLabel,tblRevId,tblProfitId,tblMarginId,cRevId,cPro
   months.forEach(m=>{mTotRev[m]=dims.reduce((a,d)=>a+(pivot[d][m]?.rev||0),0);mTotProfit[m]=dims.reduce((a,d)=>a+(pivot[d][m]?.profit||0),0);});
   const maxRev=Math.max(...Object.values(mTotRev),1);
   const thead=`<thead><tr><th>${dimLabel}</th>${months.map(m=>`<th class="num">${m}</th>`).join('')}<th class="num">Total</th></tr></thead>`;
-  const dimCell=d=>dimKey==='name'?`<span class="avatar" style="background:${ac(d)}">${ini(d)}</span>${d}`:`<span class="badge bp">${d}</span>`;
-  // Revenue
-  document.getElementById(tblRevId).innerHTML=thead+`<tbody>${dims.map((d,i)=>{const tot=months.reduce((a,m)=>a+(pivot[d][m]?.rev||0),0);return`<tr class="${i%2===1?'even':''}"><td style="white-space:nowrap">${dimCell(d)}</td>${months.map(m=>{const v=pivot[d][m]?.rev||0;const op=(v/maxRev*.12).toFixed(3);return`<td class="num" style="${v>0?`background:rgba(26,86,219,${op})`:''}"><b>${v>0?fmtC(v):'<span style="color:var(--text3)">—</span>'}</b></td>`;}).join('')}<td class="num" style="font-weight:700">${fmtC(tot)}</td></tr>`;}).join('')}</tbody><tfoot><tr><td><b>Total</b></td>${months.map(m=>`<td class="num"><b>${fmtC(mTotRev[m])}</b></td>`).join('')}<td class="num"><b>${fmtC(dims.reduce((a,d)=>a+months.reduce((b,m)=>b+(pivot[d][m]?.rev||0),0),0))}</b></td></tr></tfoot>`;
-  // Profit
-  document.getElementById(tblProfitId).innerHTML=thead+`<tbody>${dims.map((d,i)=>{const tot=months.reduce((a,m)=>a+(pivot[d][m]?.profit||0),0);return`<tr class="${i%2===1?'even':''}"><td style="white-space:nowrap">${dimCell(d)}</td>${months.map(m=>{const v=pivot[d][m]?.profit||0;const rv=pivot[d][m]?.rev||0;return`<td class="num">${rv>0?`<span style="font-weight:600;color:${v>=0?'var(--green)':'var(--red)'}">${fmtC(v)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>`;}).join('')}<td class="num" style="font-weight:700;color:${tot>=0?'var(--green)':'var(--red)'}">${fmtC(tot)}</td></tr>`;}).join('')}</tbody><tfoot><tr><td><b>Total</b></td>${months.map(m=>`<td class="num"><b style="color:${mTotProfit[m]>=0?'#86EFAC':'#FCA5A5'}">${fmtC(mTotProfit[m])}</b></td>`).join('')}<td class="num"><b>${fmtC(dims.reduce((a,d)=>a+months.reduce((b,m)=>b+(pivot[d][m]?.profit||0),0),0))}</b></td></tr></tfoot>`;
-  // Margin
-  document.getElementById(tblMarginId).innerHTML=thead+`<tbody>${dims.map((d,i)=>{const tRev=months.reduce((a,m)=>a+(pivot[d][m]?.rev||0),0);const tPro=months.reduce((a,m)=>a+(pivot[d][m]?.profit||0),0);const tM=tRev?((tPro/tRev)*100):null;return`<tr class="${i%2===1?'even':''}"><td style="white-space:nowrap">${dimCell(d)}</td>${months.map(m=>{const rv=pivot[d][m]?.rev||0;const pf=pivot[d][m]?.profit||0;const mg=rv?(pf/rv*100):null;return`<td class="num">${mg!==null?`<span style="font-weight:700;color:${marginColor(mg)}">${mg.toFixed(1)}%</span>`:'<span style="color:var(--text3)">—</span>'}</td>`;}).join('')}<td class="num">${tM!==null?`<span style="font-weight:700;color:${marginColor(tM)}">${tM.toFixed(1)}%</span>`:'—'}</td></tr>`;}).join('')}</tbody><tfoot><tr><td><b>Overall</b></td>${months.map(m=>{const mg=mTotRev[m]?((mTotProfit[m]/mTotRev[m])*100).toFixed(1):null;return`<td class="num"><b>${mg!==null?mg+'%':'—'}</b></td>`;}).join('')}<td class="num"><b>${(()=>{const tr=dims.reduce((a,d)=>a+months.reduce((b,m)=>b+(pivot[d][m]?.rev||0),0),0);const tp=dims.reduce((a,d)=>a+months.reduce((b,m)=>b+(pivot[d][m]?.profit||0),0),0);return tr?(tp/tr*100).toFixed(1)+'%':'—';})()}</b></td></tr></tfoot>`;
-  // Charts
+  const dimCell=d=>dimKey==='name'?`<span class="avatar" style="background:${ac(d)}">${ini(d)}</span>${d}`:`<span class="badge ${d.includes('GDF')?'bgdf':'bvndly'}">${d}</span>`;
+  document.getElementById(tblRevId).innerHTML=thead+`<tbody>${dims.map((d,i)=>{const tot=months.reduce((a,m)=>a+(pivot[d][m]?.rev||0),0);return`<tr class="${i%2===1?'even':''}"><td style="white-space:nowrap">${dimCell(d)}</td>${months.map(m=>{const v=pivot[d][m]?.rev||0;return`<td class="num" style="${v>0?`background:rgba(26,86,219,${(v/maxRev*.12).toFixed(3)})`:''}"><b>${v>0?fmtC(v):'<span style="color:var(--text3)">—</span>'}</b></td>`;}).join('')}<td class="num" style="font-weight:700">${fmtC(tot)}</td></tr>`;}).join('')}</tbody><tfoot><tr><td><b>Total</b></td>${months.map(m=>`<td class="num"><b>${fmtC(mTotRev[m])}</b></td>`).join('')}<td class="num"><b>${fmtC(dims.reduce((a,d)=>a+months.reduce((b,m)=>b+(pivot[d][m]?.rev||0),0),0))}</b></td></tr></tfoot>`;
+  document.getElementById(tblProfitId).innerHTML=thead+`<tbody>${dims.map((d,i)=>{const tot=months.reduce((a,m)=>a+(pivot[d][m]?.profit||0),0);return`<tr class="${i%2===1?'even':''}"><td style="white-space:nowrap">${dimCell(d)}</td>${months.map(m=>{const rv=pivot[d][m]?.rev||0;const pf=pivot[d][m]?.profit||0;return`<td class="num">${rv>0?`<span style="font-weight:600;color:${pf>=0?'var(--green)':'var(--red)'}">${fmtC(pf)}</span>`:'<span style="color:var(--text3)">—</span>'}</td>`;}).join('')}<td class="num" style="font-weight:700;color:${tot>=0?'var(--green)':'var(--red)'}">${fmtC(tot)}</td></tr>`;}).join('')}</tbody><tfoot><tr><td><b>Total</b></td>${months.map(m=>`<td class="num"><b style="color:${mTotProfit[m]>=0?'#86EFAC':'#FCA5A5'}">${fmtC(mTotProfit[m])}</b></td>`).join('')}<td class="num"><b>${fmtC(dims.reduce((a,d)=>a+months.reduce((b,m)=>b+(pivot[d][m]?.profit||0),0),0))}</b></td></tr></tfoot>`;
+  document.getElementById(tblMarginId).innerHTML=thead+`<tbody>${dims.map((d,i)=>{const tR=months.reduce((a,m)=>a+(pivot[d][m]?.rev||0),0);const tP=months.reduce((a,m)=>a+(pivot[d][m]?.profit||0),0);const tM=tR?((tP/tR)*100):null;return`<tr class="${i%2===1?'even':''}"><td style="white-space:nowrap">${dimCell(d)}</td>${months.map(m=>{const rv=pivot[d][m]?.rev||0;const pf=pivot[d][m]?.profit||0;const mg=rv?(pf/rv*100):null;return`<td class="num">${mg!==null?`<span style="font-weight:700;color:${marginColor(mg)}">${mg.toFixed(1)}%</span>`:'<span style="color:var(--text3)">—</span>'}</td>`;}).join('')}<td class="num">${tM!==null?`<span style="font-weight:700;color:${marginColor(tM)}">${tM.toFixed(1)}%</span>`:'—'}</td></tr>`;}).join('')}</tbody><tfoot><tr><td><b>Overall</b></td>${months.map(m=>{const mg=mTotRev[m]?((mTotProfit[m]/mTotRev[m])*100).toFixed(1):null;return`<td class="num"><b>${mg!==null?mg+'%':'—'}</b></td>`;}).join('')}<td class="num"><b>${(()=>{const tr=dims.reduce((a,d)=>a+months.reduce((b,m)=>b+(pivot[d][m]?.rev||0),0),0);const tp=dims.reduce((a,d)=>a+months.reduce((b,m)=>b+(pivot[d][m]?.profit||0),0),0);return tr?(tp/tr*100).toFixed(1)+'%':'—';})()}</b></td></tr></tfoot>`;
   mkChart(cRevId,{type:'bar',data:{labels:months,datasets:dims.map((d,i)=>({label:d,data:months.map(m=>+(pivot[d][m]?.rev||0).toFixed(2)),backgroundColor:PAL[i%PAL.length],borderRadius:2,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:tickFont,padding:8,boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtC(c.raw)}}},scales:{x:{stacked:true,ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}},y:{stacked:true,ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}}}}});
   mkChart(cProfitId,{type:'bar',data:{labels:months,datasets:dims.map((d,i)=>({label:d,data:months.map(m=>+(pivot[d][m]?.profit||0).toFixed(2)),backgroundColor:PAL[i%PAL.length],borderRadius:2,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:tickFont,padding:8,boxWidth:10,boxHeight:10}},tooltip:{callbacks:{label:c=>' '+c.dataset.label+': '+fmtC(c.raw)}}},scales:{x:{stacked:true,ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}},y:{stacked:true,ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}}}}});
 }
 function renderMonthly(){
   buildPivot('name','Contractor','tblCxM-rev','tblCxM-profit','tblCxM-margin','cCxM-rev','cCxM-profit');
-  buildPivot('project','Project','tblPxM-rev','tblPxM-profit','tblPxM-margin','cPxM-rev','cPxM-profit');
+  buildPivot('clientProject','Project','tblPxM-rev','tblPxM-profit','tblPxM-margin','cPxM-rev','cPxM-profit');
 }
 
-// ── VARIANCE ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// VARIANCE
+// ══════════════════════════════════════════════════════════════════
 function renderVariance(){
-  const rows=DATA;
-  const months=[...new Set(rows.map(r=>r.month))];
+  const rows=getByProject(projectFilter);
+  const months=getMonths(rows);
   const mData=months.map(m=>{const mr=rows.filter(r=>r.month===m);const rev=mr.reduce((a,r)=>a+r.revenue,0);const cost=mr.reduce((a,r)=>a+r.cost,0);const profit=mr.reduce((a,r)=>a+r.profit,0);const hrs=mr.reduce((a,r)=>a+r.hours,0);return{m,rev,cost,profit,hrs,margin:rev?((profit/rev)*100):0};});
   const last=mData[mData.length-1]||{};const prior=mData[mData.length-2]||{};
-  const revDelta=prior.rev?last.rev-prior.rev:null;const marginDelta=prior.margin!=null?last.margin-prior.margin:null;
+  const revDelta=prior.rev!=null?last.rev-prior.rev:null;const marginDelta=prior.margin!=null?last.margin-prior.margin:null;
   const totRev=rows.reduce((a,r)=>a+r.revenue,0);const totProfit=rows.reduce((a,r)=>a+r.profit,0);const totHrs=rows.reduce((a,r)=>a+r.hours,0);
   document.getElementById('kpis-va').innerHTML=`
     <div class="kpi k1"><div class="kpi-label">Latest month revenue</div><div class="kpi-value">${last.rev?fmtC(last.rev):'—'}</div><div class="kpi-sub">${last.m||''}</div>${revDelta!=null?`<div class="kpi-delta ${revDelta>=0?'up':'dn'}">${revDelta>=0?'▲':'▼'} ${fmtC(Math.abs(revDelta))} MoM</div>`:''}</div>
     <div class="kpi k2"><div class="kpi-label">Latest margin</div><div class="kpi-value">${last.margin!=null?last.margin.toFixed(1)+'%':'—'}</div><div class="kpi-sub">${last.m||''}</div>${marginDelta!=null?`<div class="kpi-delta ${marginDelta>=0?'up':'dn'}">${marginDelta>=0?'▲':'▼'} ${Math.abs(marginDelta).toFixed(1)}pp MoM</div>`:''}</div>
     <div class="kpi k3"><div class="kpi-label">Total revenue</div><div class="kpi-value">${fmtC(totRev)}</div><div class="kpi-sub">${months.length} months</div></div>
     <div class="kpi k4"><div class="kpi-label">Total profit</div><div class="kpi-value">${fmtC(totProfit)}</div><div class="kpi-sub">Margin ${totRev?((totProfit/totRev)*100).toFixed(1):0}%</div></div>
-    <div class="kpi k5"><div class="kpi-label">Total hours</div><div class="kpi-value">${fmtN(totHrs)}</div><div class="kpi-sub">billable</div></div>`;
+    <div class="kpi k5"><div class="kpi-label">Total hours</div><div class="kpi-value">${fmtN(totHrs)}</div><div class="kpi-sub">billable + non-bill</div></div>`;
   document.getElementById('tblVariance').innerHTML=mData.map((d,i)=>{const p=i>0?mData[i-1]:null;return`<tr class="${i%2===1?'even':''}"><td style="font-weight:500">${d.m}</td><td class="num">${fmtC(d.rev)}</td><td class="num">${fmtDelta(p?d.rev-p.rev:null)}</td><td class="num">${fmtC(d.cost)}</td><td class="num">${fmtDelta(p?d.cost-p.cost:null)}</td><td class="num" style="font-weight:600;color:${d.profit>=0?'var(--green)':'var(--red)'}">${fmtC(d.profit)}</td><td class="num">${fmtDelta(p?d.profit-p.profit:null)}</td><td class="num">${d.margin.toFixed(1)}%</td><td class="num">${fmtDeltaPP(p?+(d.margin-p.margin).toFixed(1):null)}</td><td class="num">${d.hrs}</td><td class="num">${fmtDelta(p?d.hrs-p.hrs:null,false)}</td></tr>`;}).join('');
   const revByM=mData.map(d=>+d.rev.toFixed(2));const hrsByM=mData.map(d=>d.hrs);
-  const wData=revByM.map((v,i)=>i===0?v:+(v-revByM[i-1]).toFixed(2));
-  const wColors=wData.map((v,i)=>i===0?'#1A56DB':v>=0?'#059669':'#DC2626');
-  mkChart('cWaterfall',{type:'bar',data:{labels:months,datasets:[{data:wData,backgroundColor:wColors,borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataIndex===0?' Base: ':' MoM: '}${fmtC(c.raw)}`}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
-  mkChart('cHrsTrend',{type:'line',data:{labels:months,datasets:[{label:'Hours',data:hrsByM,borderColor:'#0891B2',backgroundColor:'rgba(8,145,178,0.08)',tension:.3,fill:true,pointRadius:4,pointBackgroundColor:'#0891B2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+  mkChart('cWaterfall',{type:'bar',data:{labels:months,datasets:[{data:revByM.map((v,i)=>i===0?v:+(v-revByM[i-1]).toFixed(2)),backgroundColor:revByM.map((v,i)=>i===0?'#1A56DB':v>=revByM[i-1]?'#059669':'#DC2626'),borderRadius:3,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.dataIndex===0?' Base: ':' MoM: '}${fmtC(c.raw)}`}}},scales:{y:{ticks:{callback:dollar,font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
+  mkChart('cHrsTrend',{type:'line',data:{labels:months,datasets:[{data:hrsByM,borderColor:'#0891B2',backgroundColor:'rgba(8,145,178,0.08)',tension:.3,fill:true,pointRadius:4,pointBackgroundColor:'#0891B2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{font:tickFont},grid:{color:gridColor}},x:{ticks:{font:tickFont,autoSkip:false,maxRotation:20},grid:{display:false}}}}});
 }
 
-// ── RATE CARD ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// RATE CARD
+// ══════════════════════════════════════════════════════════════════
+function setRCFilter(f){
+  rcFilter=f;
+  ['all','vndly','gdf'].forEach(k=>{document.getElementById('rc-'+k).className='tbtn'+(k===f?' active':'');});
+  renderRateCard();
+}
 function renderRateCard(){
-  document.getElementById('rcGrid').innerHTML=Object.entries(RATES).map(([n,r])=>{const spread=(r.bill-r.cost).toFixed(2);const margin=r.bill?((r.bill-r.cost)/r.bill*100).toFixed(1):0;return`<div class="rc-card"><div class="rc-name"><span class="avatar" style="background:${ac(n)}">${ini(n)}</span>${n}</div><div class="rc-row"><span class="rc-lbl">Project</span><span class="rc-val"><span class="badge bp">${r.project||'—'}</span></span></div><div class="rc-row"><span class="rc-lbl">Bill rate</span><span class="rc-val bill">$${r.bill.toFixed(2)}/hr</span></div><div class="rc-row"><span class="rc-lbl">Cost rate</span><span class="rc-val cost">$${r.cost.toFixed(2)}/hr</span></div><div class="rc-row"><span class="rc-lbl">Spread</span><span class="rc-val margin">$${spread}/hr</span></div><div class="rc-row"><span class="rc-lbl">Gross margin</span><span class="rc-val margin">${margin}%</span></div></div>`;}).join('');
-  document.getElementById('tblRateCard').innerHTML=Object.entries(RATES).map(([n,r],i)=>{const spread=(r.bill-r.cost).toFixed(2);const margin=r.bill?((r.bill-r.cost)/r.bill*100).toFixed(1):0;return`<tr class="${i%2===1?'even':''}"><td><span class="avatar" style="background:${ac(n)}">${ini(n)}</span>${n}</td><td><span class="badge bp">${r.project||'—'}</span></td><td class="num" style="color:var(--blue);font-weight:600">$${r.bill.toFixed(2)}</td><td class="num" style="color:var(--red)">$${r.cost.toFixed(2)}</td><td class="num" style="color:var(--green);font-weight:600">$${spread}</td><td class="num"><span style="font-weight:700;color:${marginColor(parseFloat(margin))}">${margin}%</span></td></tr>`;}).join('');
+  const entries=Object.entries(RATES).filter(([,r])=>{
+    if(rcFilter==='all')return true;
+    if(rcFilter==='VNDLY-Contingency Labour')return r.clientProject==='VNDLY-Contingency Labour';
+    return r.clientProject==='VFC-GDF 2.0';
+  });
+  document.getElementById('rcGrid').innerHTML=entries.map(([n,r])=>{const spread=(r.bill-r.cost).toFixed(2);const margin=r.bill?((r.bill-r.cost)/r.bill*100).toFixed(1):'NB';const nb=r.bill===0;return`<div class="rc-card"><div class="rc-name"><span class="avatar" style="background:${ac(n)}">${ini(n)}</span>${n}</div><div class="rc-row"><span class="rc-lbl">Project</span><span class="rc-val"><span class="badge ${r.clientProject.includes('GDF')?'bgdf':'bvndly'}">${r.clientProject.includes('GDF')?'GDF':'VNDLY'}</span></span></div><div class="rc-row"><span class="rc-lbl">Bill rate</span><span class="rc-val ${nb?'cost':'bill'}">${nb?'Non-billable':'$'+r.bill.toFixed(2)+'/hr'}</span></div><div class="rc-row"><span class="rc-lbl">Cost rate</span><span class="rc-val cost">$${r.cost.toFixed(2)}/hr</span></div>${!nb?`<div class="rc-row"><span class="rc-lbl">Spread</span><span class="rc-val margin">$${spread}/hr</span></div><div class="rc-row"><span class="rc-lbl">Margin</span><span class="rc-val margin">${margin}%</span></div>`:''}</div>`;}).join('');
+  document.getElementById('tblRateCard').innerHTML=entries.map(([n,r],i)=>{const spread=(r.bill-r.cost).toFixed(2);const margin=r.bill?((r.bill-r.cost)/r.bill*100).toFixed(1):'—';const nb=r.bill===0;return`<tr class="${i%2===1?'even':''}"><td><span class="avatar" style="background:${ac(n)}">${ini(n)}</span>${n}</td><td><span class="badge ${r.clientProject.includes('GDF')?'bgdf':'bvndly'}">${r.clientProject.includes('GDF')?'GDF':'VNDLY'}</span></td><td class="num" style="color:${nb?'var(--text3)':'var(--blue)'};font-weight:600">${nb?'—':'$'+r.bill.toFixed(2)}</td><td class="num" style="color:var(--red)">$${r.cost.toFixed(2)}</td><td class="num" style="color:${nb?'var(--text3)':'var(--green)'};font-weight:600">${nb?'—':'$'+spread}</td><td class="num"><span style="font-weight:700;color:${nb?'var(--amber)':marginColor(parseFloat(margin))}">${nb?'Non-bill':margin+'%'}</span></td><td><span class="badge ${nb?'bnb':'ba'}">${nb?'Non-bill':'Billable'}</span></td></tr>`;}).join('');
 }
 
-// ── DETAIL ────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// DETAIL
+// ══════════════════════════════════════════════════════════════════
+function populateFilters(){
+  const names=[...new Set(DATA.map(d=>d.name))].sort();
+  const months=[...new Set(DATA.map(d=>d.month))];
+  const projs=[...new Set(DATA.map(d=>d.clientProject))].sort();
+  const sel=(id,opts,pfx)=>{const el=document.getElementById(id);if(!el)return;const cur=el.value;el.innerHTML=`<option value="">${pfx}</option>`+opts.map(o=>`<option${o===cur?' selected':''}>${o}</option>`).join('');};
+  sel('fName',names,'All contractors');sel('fMonth',months,'All months');sel('fProject',projs,'All projects');
+}
+function getDetailFiltered(){
+  const n=document.getElementById('fName').value;
+  const m=document.getElementById('fMonth').value;
+  const p=document.getElementById('fProject').value;
+  const b=document.getElementById('fBillable').value;
+  const s=document.getElementById('fStatus').value;
+  let rows=DATA.filter(d=>(!n||d.name===n)&&(!m||d.month===m)&&(!p||d.clientProject===p)&&(!s||d.status===s)&&(!b||(b==='billable'?!d.nonBillable:d.nonBillable)));
+  return[...rows].sort((a,b2)=>{let av=a[sortKey]||'',bv=b2[sortKey]||'';if(typeof av==='string'){av=av.toLowerCase();bv=bv.toLowerCase();}return sortAsc?(av>bv?1:-1):(av<bv?1:-1);});
+}
+function sortTable(k){
+  if(sortKey===k)sortAsc=!sortAsc;else{sortKey=k;sortAsc=true;}
+  document.querySelectorAll('#dtTable thead th').forEach(t=>t.classList.remove('sa','sd'));
+  const keys=['name','clientProject','date','month','hours','billRate','costRate','revenue','cost','profit','type'];
+  const i=keys.indexOf(k);if(i>=0)document.querySelectorAll('#dtTable thead th')[i].classList.add(sortAsc?'sa':'sd');
+  renderDetail();
+}
 function renderDetail(){
-  const rows=getFiltered();
+  const rows=getDetailFiltered();
   const totH=rows.reduce((a,r)=>a+r.hours,0);
   const totRev=rows.reduce((a,r)=>a+r.revenue,0);
   const totCost=rows.reduce((a,r)=>a+r.cost,0);
   const totProfit=rows.reduce((a,r)=>a+r.profit,0);
   document.getElementById('dtCount').textContent=`${rows.length} rows`;
   document.getElementById('filterInfo').textContent=rows.length<DATA.length?`Showing ${rows.length} of ${DATA.length}`:`${DATA.length} records`;
-  document.getElementById('dtBody').innerHTML=rows.map((r,i)=>`<tr class="${i%2===1?'even':''}"><td><span class="avatar" style="background:${ac(r.name)}">${ini(r.name)}</span>${r.name}</td><td><span class="badge bp">${r.project}</span></td><td>${fmtD(r.start)}</td><td>${fmtD(r.end)}</td><td>${r.month}</td><td class="num">${r.hours}</td><td class="num">$${r.billRate.toFixed(2)}</td><td class="num">$${r.costRate.toFixed(2)}</td><td class="num" style="font-weight:600">${fmtC(r.revenue)}</td><td class="num">${fmtC(r.cost)}</td><td class="num" style="font-weight:600;color:${r.profit>=0?'var(--green)':'var(--red)'}">${fmtC(r.profit)}</td><td><span class="badge ${r.status==='Approved'?'ba':'bs'}">${r.status}</span></td></tr>`).join('');
-  document.getElementById('dtFoot').innerHTML=`<tr><td colspan="5">Total</td><td class="num">${totH}</td><td></td><td></td><td class="num">${fmtC(totRev)}</td><td class="num">${fmtC(totCost)}</td><td class="num">${fmtC(totProfit)}</td><td></td></tr>`;
+  document.getElementById('dtBody').innerHTML=rows.map((r,i)=>`<tr class="${i%2===1?'even':''}"><td><span class="avatar" style="background:${ac(r.name)}">${ini(r.name)}</span>${r.name}</td><td><span class="badge ${r.clientProject.includes('GDF')?'bgdf':'bvndly'}">${r.clientProject.includes('GDF')?'GDF':'VNDLY'}</span></td><td>${fmtD(r.date)}</td><td>${r.month}</td><td class="num">${r.hours}</td><td class="num">${r.billRate>0?'$'+r.billRate.toFixed(2):'—'}</td><td class="num">$${r.costRate.toFixed(2)}</td><td class="num" style="font-weight:600">${fmtC(r.revenue)}</td><td class="num">${fmtC(r.cost)}</td><td class="num" style="font-weight:600;color:${r.profit>=0?'var(--green)':'var(--red)'}">${fmtC(r.profit)}</td><td><span class="badge ${r.nonBillable?'bnb':'ba'}">${r.type}</span></td></tr>`).join('');
+  document.getElementById('dtFoot').innerHTML=`<tr><td colspan="4">Total</td><td class="num">${totH}</td><td></td><td></td><td class="num">${fmtC(totRev)}</td><td class="num">${fmtC(totCost)}</td><td class="num">${fmtC(totProfit)}</td><td></td></tr>`;
 }
+function resetFilters(){['fName','fProject','fMonth','fBillable','fStatus'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});renderAll();}
 
-// ── RENDER ALL ────────────────────────────────────────────────────
-function renderAll(){
-  populateFilters();
-  renderOverview();
-  renderProfitability();
-  renderMonthly();
-  renderVariance();
-  renderRateCard();
-  renderDetail();
-}
-
-// ── RATE CARD EDITOR ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// RATE CARD EDITOR
+// ══════════════════════════════════════════════════════════════════
 function populateRCEditor(){
-  document.getElementById('rcEditorBody').innerHTML=Object.entries(RATES).map(([n,r])=>`<tr><td><input value="${n}" data-orig="${n}" class="rc-name-inp"></td><td><input type="number" step="0.01" value="${r.bill.toFixed(2)}" class="rc-bill-inp"></td><td><input type="number" step="0.01" value="${r.cost.toFixed(2)}" class="rc-cost-inp"></td><td><input value="${r.project||''}" class="rc-proj-inp"></td><td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td></tr>`).join('');
+  document.getElementById('rcEditorBody').innerHTML=Object.entries(RATES).map(([n,r])=>`<tr><td><input value="${n}" class="rc-name-inp"></td><td><select class="rc-proj-sel" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surf2)"><option${r.clientProject==='VNDLY-Contingency Labour'?' selected':''}>VNDLY-Contingency Labour</option><option${r.clientProject==='VFC-GDF 2.0'?' selected':''}>VFC-GDF 2.0</option></select></td><td><input type="number" step="0.01" value="${r.bill.toFixed(2)}" class="rc-bill-inp"></td><td><input type="number" step="0.01" value="${r.cost.toFixed(2)}" class="rc-cost-inp"></td><td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td></tr>`).join('');
 }
 function addRateRow(){
   const tr=document.createElement('tr');
-  tr.innerHTML=`<td><input value="New Contractor" class="rc-name-inp"></td><td><input type="number" step="0.01" value="0" class="rc-bill-inp"></td><td><input type="number" step="0.01" value="0" class="rc-cost-inp"></td><td><input value="Unassigned" class="rc-proj-inp"></td><td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
+  tr.innerHTML=`<td><input value="New Contractor" class="rc-name-inp"></td><td><select class="rc-proj-sel" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);border-radius:4px;background:var(--surf2)"><option>VNDLY-Contingency Labour</option><option>VFC-GDF 2.0</option></select></td><td><input type="number" step="0.01" value="0" class="rc-bill-inp"></td><td><input type="number" step="0.01" value="0" class="rc-cost-inp"></td><td><button class="del-btn" onclick="this.closest('tr').remove()">✕</button></td>`;
   document.getElementById('rcEditorBody').appendChild(tr);
 }
 function saveRateCard(){
   const newRates={};
   document.querySelectorAll('#rcEditorBody tr').forEach(tr=>{
     const n=tr.querySelector('.rc-name-inp').value.trim();
+    const cp=tr.querySelector('.rc-proj-sel').value;
     const b=parseFloat(tr.querySelector('.rc-bill-inp').value)||0;
     const c=parseFloat(tr.querySelector('.rc-cost-inp').value)||0;
-    const p=tr.querySelector('.rc-proj-inp').value.trim()||'Unassigned';
-    if(n)newRates[n]={bill:b,cost:c,project:p};
+    if(n)newRates[n]={bill:b,cost:c,clientProject:cp};
   });
-  RATES=newRates;
-  const raw=DATA.map(r=>({name:r.name,start:r.start,end:r.end,hours:r.hours,status:r.status,month:r.month}));
-  rebuildData(raw);closeModal('rcModal');renderAll();
+  RATES=newRates;rebuildData();closeModal('rcModal');renderAll();
   showToast('✓ Rate card saved — all calculations updated');
 }
 
-// ── UPLOAD ────────────────────────────────────────────────────────
-let uploadType='timesheet';
+// ══════════════════════════════════════════════════════════════════
+// UPLOAD
+// ══════════════════════════════════════════════════════════════════
 function setUploadType(t){
   uploadType=t;
   document.querySelectorAll('.utype-card').forEach(c=>c.classList.remove('active'));
   document.getElementById('ucard-'+t).classList.add('active');
   const hints={
-    timesheet:'Required: Contractor Name · Timesheet Start Date · Timesheet End Date · Total Billable Hours · Status',
-    costcard:'Required: Name · Bill Rate · Cost Rate · (optional) Project — flexible column names. New contractors auto-added.',
-    projectmap:'Required: Name · Project Name — flexible column names. New contractors auto-added.'
+    vndly:'Columns: Contractor Name · Timesheet Start Date · Timesheet End Date · Total Billable Hours · Status',
+    gdf:'Multi-tab .xls file with tabs: "Billable hrs", "Non billable hrs", "Rate card" — all parsed automatically.',
+    costcard:'Columns: Name · Bill Rate · Cost Rate · (opt) Project — flexible column names accepted.',
+    projectmap:'Columns: Name · Project Name — flexible column names accepted.',
+    gdfrate:'Columns: Name · Bill Rate/hr · Cost Rate/hr (from GDF Rate card tab)'
   };
   document.getElementById('uploadHint').textContent=hints[t];
 }
 function handleFile(e){const f=e.target.files[0];if(f)processFile(f);}
-const dropZone=document.getElementById('dropZone');
-dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag');});
-dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag'));
-dropZone.addEventListener('drop',e=>{e.preventDefault();dropZone.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)processFile(f);});
+const dz=document.getElementById('dropZone');
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');const f=e.dataTransfer.files[0];if(f)processFile(f);});
 
-function normKey(s){return(s||'').toLowerCase().replace(/[\s_()/.$]/g,'');}
-function flexRow(row){const n={};Object.entries(row).forEach(([k,v])=>n[normKey(k)]=v);return n;}
+function normKey(s){return(s||'').toLowerCase().replace(/[\s_()/.$%#@!]/g,'');}
+function flexRow(row){const n={};Object.entries(row).forEach(([k,v])=>n[normKey(k)]=String(v||'').trim());return n;}
+
+function parseDate(s){
+  if(!s)return'';
+  s=String(s).trim();
+  // DD-MM-YYYY or DD/MM/YYYY
+  const dm=/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/.exec(s);
+  if(dm)return`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;
+  // MM/DD/YYYY
+  const md=/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+  if(md)return`${md[3]}-${md[1].padStart(2,'0')}-${md[2].padStart(2,'0')}`;
+  try{const d=new Date(s);if(!isNaN(d))return d.toISOString().slice(0,10);}catch{}
+  return s;
+}
+function dateToMonth(s){if(!s)return'';try{return new Date(s+'T00:00:00').toLocaleDateString('en-CA',{month:'short',year:'numeric'});}catch{return'';}}
 
 function processFile(file){
   const reader=new FileReader();
   reader.onload=ev=>{
     try{
-      let rows2=[];
-      const readXlsx=buf=>{const wb=XLSX.read(buf,{type:'array',cellDates:false});const ws=wb.Sheets[wb.SheetNames[0]];return XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});};
       const parseCSV=text=>{const lines=text.split('\n').filter(Boolean);const headers=lines[0].split(',').map(h=>h.trim().replace(/"/g,''));return lines.slice(1).map(l=>l.split(',').map(c=>c.trim().replace(/"/g,''))).filter(c=>c.some(Boolean)).map(cols=>{const o={};headers.forEach((h,i)=>o[h]=cols[i]||'');return o;});};
-      if(file.name.endsWith('.csv'))rows2=parseCSV(ev.target.result);
-      else rows2=readXlsx(ev.target.result);
-      if(!rows2.length){showToast('No data rows found in file');return;}
+      const readWb=buf=>XLSX.read(buf,{type:'array',cellDates:false,raw:false});
 
-      if(uploadType==='costcard'){
-        let updated=0,added=0;
-        rows2.forEach(row=>{
+      // ── GDF multi-tab ──────────────────────────────────────────
+      if(uploadType==='gdf'){
+        const wb=readWb(ev.target.result);
+        const sheetNames=wb.SheetNames.map(s=>s.toLowerCase().trim());
+        let added=0,rateAdded=0,rateUpdated=0;
+
+        // Rate card tab first
+        const riIdx=sheetNames.findIndex(s=>s.includes('rate'));
+        if(riIdx>=0){
+          const ws=wb.Sheets[wb.SheetNames[riIdx]];
+          const rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+          rows.forEach(row=>{
+            const r=flexRow(row);
+            const n=(r['name']||r['contractorname']||r['employeename']||'').trim();
+            if(!n)return;
+            const b=parseFloat(r['billratehr']||r['billrate']||r['bill']||0);
+            const c=parseFloat(r['costratehr']||r['costrate']||r['cost']||0);
+            const isNew=!RATES[n];
+            RATES[n]={bill:b,cost:c,clientProject:'VFC-GDF 2.0'};
+            isNew?rateAdded++:rateUpdated++;
+          });
+        }
+
+        // Billable hrs tab
+        const biIdx=sheetNames.findIndex(s=>s.includes('billable')&&!s.includes('non'));
+        if(biIdx>=0){
+          const ws=wb.Sheets[wb.SheetNames[biIdx]];
+          const rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+          const existing=new Set(RAW.map(d=>d.name+'|'+d.date+'|'+d.clientProject));
+          rows.forEach(row=>{
+            const r=flexRow(row);
+            const name=(r['employeename']||r['name']||r['contractorname']||'').trim();
+            if(!name)return;
+            const dateStr=parseDate(r['date']||r['startdate']||r['timesheetdate']||'');
+            const hrs=parseFloat(r['hours']||r['hrs']||r['totalbillablehours']||0)||0;
+            const jobName=(r['jobname']||r['job']||r['task']||'').trim();
+            const month=dateToMonth(dateStr);
+            const key=name+'|'+dateStr+'|VFC-GDF 2.0';
+            if(!existing.has(key)&&dateStr){
+              RAW.push({name,date:dateStr,month,hours:hrs,status:'Approved',clientProject:'VFC-GDF 2.0',jobName});
+              existing.add(key);added++;
+            }
+          });
+        }
+
+        // Non-billable hrs tab
+        const niIdx=sheetNames.findIndex(s=>s.includes('non'));
+        if(niIdx>=0){
+          const ws=wb.Sheets[wb.SheetNames[niIdx]];
+          const rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+          const existing=new Set(RAW.map(d=>d.name+'|'+d.date+'|'+d.clientProject+'|nb'));
+          rows.forEach(row=>{
+            const r=flexRow(row);
+            const name=(r['employeename']||r['name']||r['contractorname']||'').trim();
+            if(!name)return;
+            const dateStr=parseDate(r['date']||r['startdate']||'');
+            const hrs=parseFloat(r['hours']||r['hrs']||0)||0;
+            const jobName=(r['jobname']||r['job']||'').trim();
+            const month=dateToMonth(dateStr);
+            const key=name+'|'+dateStr+'|VFC-GDF 2.0|nb';
+            // Force bill rate 0 for non-billable
+            if(!RATES[name])RATES[name]={bill:0,cost:3,clientProject:'VFC-GDF 2.0'};
+            const savedBill=RATES[name].bill;
+            RATES[name]={...RATES[name],bill:0};
+            if(!existing.has(key)&&dateStr){
+              RAW.push({name,date:dateStr,month,hours:hrs,status:'Approved',clientProject:'VFC-GDF 2.0',jobName,forceNonBillable:true});
+              existing.add(key);
+            }
+            RATES[name].bill=savedBill;// restore after flagging
+          });
+        }
+
+        rebuildData();populateFilters();renderAll();closeModal('uploadModal');
+        showToast(`✓ GDF: ${added} billable rows · rates: ${rateUpdated} updated, ${rateAdded} added`);
+        return;
+      }
+
+      // ── GDF Rate card only ─────────────────────────────────────
+      if(uploadType==='gdfrate'){
+        const wb=readWb(ev.target.result);
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+        let upd=0,add=0;
+        rows.forEach(row=>{
           const r=flexRow(row);
-          const n=(r['contractorname']||r['name']||r['contractor']||'').trim();
+          const n=(r['name']||r['contractorname']||r['employeename']||'').trim();
           if(!n)return;
-          const b=parseFloat(r['billrate']||r['billingrate']||r['bill']||r['billratehr']||r['billrate$hr']||0);
-          const c=parseFloat(r['costrate']||r['cost']||r['costratehr']||r['costrate$hr']||0);
-          const p=(r['project']||r['projectname']||r['proj']||'Unassigned').trim();
+          const b=parseFloat(r['billratehr']||r['billrate']||r['bill']||0);
+          const c=parseFloat(r['costratehr']||r['costrate']||r['cost']||0);
           const isNew=!RATES[n];
-          RATES[n]={bill:b,cost:c,project:p};
-          isNew?added++:updated++;
+          RATES[n]={bill:b,cost:c,clientProject:'VFC-GDF 2.0'};
+          isNew?add++:upd++;
         });
-        const raw=DATA.map(r=>({name:r.name,start:r.start,end:r.end,hours:r.hours,status:r.status,month:r.month}));
-        rebuildData(raw);closeModal('uploadModal');renderAll();
-        showToast(`✓ Cost card: ${updated} updated, ${added} new contractors added`);
+        rebuildData();renderAll();closeModal('uploadModal');
+        showToast(`✓ GDF rate card: ${upd} updated, ${add} new`);
         return;
       }
 
+      // ── Cost card ──────────────────────────────────────────────
+      if(uploadType==='costcard'){
+        let rows2=[];
+        if(file.name.match(/\.csv$/i))rows2=parseCSV(ev.target.result);
+        else{const wb=readWb(ev.target.result);rows2=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:false,defval:''});}
+        let upd=0,add=0;
+        rows2.forEach(row=>{
+          const r=flexRow(row);
+          const n=(r['contractorname']||r['name']||r['contractor']||r['employeename']||'').trim();
+          if(!n)return;
+          const b=parseFloat(r['billrate']||r['billingrate']||r['bill']||r['billratehr']||0);
+          const c=parseFloat(r['costrate']||r['cost']||r['costratehr']||0);
+          const p=(r['project']||r['projectname']||r['clientproject']||'').trim()||'VFC-GDF 2.0';
+          const isNew=!RATES[n];
+          RATES[n]={bill:b,cost:c,clientProject:p};
+          isNew?add++:upd++;
+        });
+        rebuildData();renderAll();closeModal('uploadModal');
+        showToast(`✓ Cost card: ${upd} updated, ${add} new`);return;
+      }
+
+      // ── Project mapping ────────────────────────────────────────
       if(uploadType==='projectmap'){
-        let updated=0,added=0;
+        let rows2=[];
+        if(file.name.match(/\.csv$/i))rows2=parseCSV(ev.target.result);
+        else{const wb=readWb(ev.target.result);rows2=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:false,defval:''});}
+        let upd=0,add=0;
         rows2.forEach(row=>{
           const r=flexRow(row);
           const n=(r['contractorname']||r['name']||r['contractor']||'').trim();
-          const p=(r['projectname']||r['project']||r['proj']||'').trim();
+          const p=(r['projectname']||r['project']||r['clientproject']||'').trim();
           if(!n||!p)return;
-          if(RATES[n]){RATES[n].project=p;updated++;}
-          else{RATES[n]={bill:0,cost:0,project:p};added++;}
+          if(RATES[n]){RATES[n].clientProject=p;upd++;}else{RATES[n]={bill:0,cost:0,clientProject:p};add++;}
         });
-        const raw=DATA.map(r=>({name:r.name,start:r.start,end:r.end,hours:r.hours,status:r.status,month:r.month}));
-        rebuildData(raw);closeModal('uploadModal');renderAll();
-        showToast(`✓ Project map: ${updated} updated, ${added} new contractors added`);
-        return;
+        rebuildData();renderAll();closeModal('uploadModal');
+        showToast(`✓ Project map: ${upd} updated, ${add} new`);return;
       }
 
-      // Timesheet
+      // ── VNDLY timesheet ────────────────────────────────────────
+      let rows2=[];
+      if(file.name.match(/\.csv$/i))rows2=parseCSV(ev.target.result);
+      else{const wb=readWb(ev.target.result);rows2=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{raw:false,defval:''});}
+      const existing=new Set(RAW.map(d=>d.name+'|'+d.date+'|'+d.clientProject));
       let added=0;
-      const existing=new Set(DATA.map(d=>d.name+'|'+d.start+'|'+d.end));
-      const rawSeed=DATA.map(r=>({name:r.name,start:r.start,end:r.end,hours:r.hours,status:r.status,month:r.month}));
-      const newRows=[];
       rows2.forEach(row=>{
         const r=flexRow(row);
         const name=(r['contractorname']||r['name']||'').trim();if(!name)return;
         const hrs=parseFloat(r['totalbillablehours']||r['hours']||0)||0;
-        const fmt=s=>{try{return new Date(s).toISOString().slice(0,10);}catch{return s||'';}};
-        const start=fmt(r['timesheetstartdate']||r['startdate']||r['start']||'');
-        const end=fmt(r['timesheetenddate']||r['enddate']||r['end']||'');
+        const start=parseDate(r['timesheetstartdate']||r['startdate']||r['start']||'');
         const status=(r['status']||'Submitted').trim();
-        const mo=end?new Date(end+'T00:00:00').toLocaleDateString('en-CA',{month:'short',year:'numeric'}):'';
-        if(!existing.has(name+'|'+start+'|'+end)){newRows.push({name,start,end,hours:hrs,status,month:mo});added++;}
+        const month=dateToMonth(start);
+        const key=name+'|'+start+'|VNDLY-Contingency Labour';
+        if(!existing.has(key)&&start){RAW.push({name,date:start,month,hours:hrs,status,clientProject:'VNDLY-Contingency Labour',jobName:''});existing.add(key);added++;}
       });
-      rebuildData([...rawSeed,...newRows]);
-      closeModal('uploadModal');renderAll();
-      showToast(`✓ ${added} new rows added (${rows2.length-added} duplicates skipped)`);
-    }catch(err){showToast('Error reading file: '+err.message);}
+      rebuildData();populateFilters();renderAll();closeModal('uploadModal');
+      showToast(`✓ VNDLY: ${added} new rows added`);
+    }catch(err){showToast('Error: '+err.message);console.error(err);}
   };
-  if(file.name.endsWith('.csv'))reader.readAsText(file);
+  if(file.name.match(/\.csv$/i))reader.readAsText(file);
   else reader.readAsArrayBuffer(file);
 }
 
-// ── EXPORT ────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// EXPORT / MODAL / TOAST
+// ══════════════════════════════════════════════════════════════════
 function exportCSV(){
-  const rows=getFiltered();
-  const h=['Contractor','Project','Start','End','Month','Hours','Bill $/hr','Cost $/hr','Revenue','Cost','Profit','Status'];
-  const lines=[h.join(','),...rows.map(r=>[`"${r.name}"`,`"${r.project}"`,r.start,r.end,`"${r.month}"`,r.hours,r.billRate.toFixed(2),r.costRate.toFixed(2),r.revenue.toFixed(2),r.cost.toFixed(2),r.profit.toFixed(2),r.status].join(','))];
+  const rows=getDetailFiltered();
+  const h=['Contractor','Project','Date','Month','Hours','Bill $/hr','Cost $/hr','Revenue','Cost','Profit','Type','Status'];
+  const lines=[h.join(','),...rows.map(r=>[`"${r.name}"`,`"${r.clientProject}"`,r.date,`"${r.month}"`,r.hours,r.billRate.toFixed(2),r.costRate.toFixed(2),r.revenue.toFixed(2),r.cost.toFixed(2),r.profit.toFixed(2),r.type,r.status||''].join(','))];
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/csv'}));
-  a.download=`Kochasoft_CFO_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+  a.download=`VFCorp_CFO_${new Date().toISOString().slice(0,10)}.csv`;a.click();
   showToast('✓ CSV exported');
 }
-
-// ── MODAL ─────────────────────────────────────────────────────────
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){document.getElementById(id).classList.remove('open');}
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
-
-// ── TOAST ─────────────────────────────────────────────────────────
 let toastTimer;
-function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),4000);}
 
-// ── INIT ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════
+// RENDER ALL + INIT
+// ══════════════════════════════════════════════════════════════════
+function renderAll(){
+  updateClientBar();
+  renderOverview();
+  renderCompare();
+  renderProfitability();
+  renderMonthly();
+  renderVariance();
+  renderRateCard();
+  renderDetail();
+  populateFilters();
+}
 switchTab('overview');
 renderAll();
 </script>
